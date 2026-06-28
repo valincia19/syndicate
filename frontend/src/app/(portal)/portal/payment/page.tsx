@@ -275,6 +275,8 @@ function PaymentContent() {
           setRenewalError("This license key has been revoked and cannot be renewed.")
           return
         }
+        const originalExtra = lic.hwid_limit > PRO_BASE_HWID ? lic.hwid_limit - PRO_BASE_HWID : 0
+        setExtraHwidSlots(originalExtra)
         setRenewalLicense(lic)
       })
       .catch((err) => {
@@ -1033,67 +1035,91 @@ function PaymentContent() {
                   <div className="rounded-md bg-primary/5 border border-primary/20 p-3 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-bold text-foreground uppercase tracking-wide">Extra HWID Slots</span>
-                        <span className="text-[9px] text-muted-foreground font-mono">+${EXTRA_HWID_PRICE_USD.toFixed(2)} USD / slot</span>
-                      </div>
-                      <span className="text-[9px] font-mono text-primary px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded">
-                        Max {PRO_MAX_HWID} slots
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-0 border border-border rounded-md overflow-hidden bg-card">
-                        <button
-                          type="button"
-                          onClick={() => setExtraHwidSlots(Math.max(0, extraHwidSlots - 1))}
-                          disabled={extraHwidSlots === 0}
-                          className="px-2.5 py-1.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed select-none"
-                        >−</button>
-                        <span className="px-3 py-1.5 text-[12px] font-mono font-black text-foreground border-x border-border min-w-[40px] text-center">
-                          {extraHwidSlots}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setExtraHwidSlots(Math.min(PRO_MAX_HWID - PRO_BASE_HWID, extraHwidSlots + 1))}
-                          disabled={extraHwidSlots >= PRO_MAX_HWID - PRO_BASE_HWID}
-                          className="px-2.5 py-1.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed select-none"
-                        >+</button>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-foreground">
-                          {PRO_BASE_HWID + extraHwidSlots} Total Slots
-                        </span>
-                        {extraHwidSlots > 0 && (
-                          <span className="text-[9px] text-primary font-mono">+${(extraHwidSlots * EXTRA_HWID_PRICE_USD).toFixed(2)} USD</span>
+                        <span className="text-[10px] font-bold text-foreground uppercase tracking-wide">HWID Slots</span>
+                        {renewParam && renewalLicense ? (
+                          <span className="text-[9px] text-amber-500 font-mono">Renewal inherits original slots</span>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground font-mono">+${EXTRA_HWID_PRICE_USD.toFixed(2)} USD / slot</span>
                         )}
                       </div>
+                      {!renewParam && (
+                        <span className="text-[9px] font-mono text-primary px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded">
+                          Max {PRO_MAX_HWID} slots
+                        </span>
+                      )}
                     </div>
-                    <div className="flex flex-col gap-1.5 mt-1">
-                      <div className="relative w-full h-2 bg-secondary rounded-full overflow-hidden flex items-center group cursor-pointer border border-border/40">
-                        {/* Full Progress Fill Line */}
-                        <div
-                          className="bg-primary h-full rounded-full transition-all duration-75"
-                          style={{ width: `${((PRO_BASE_HWID + extraHwidSlots) / PRO_MAX_HWID) * 100}%` }}
-                        />
-                        {/* Transparent range slider overlay for drag interaction */}
-                        <input
-                          type="range"
-                          min={0}
-                          max={PRO_MAX_HWID - PRO_BASE_HWID}
-                          step={1}
-                          value={extraHwidSlots}
-                          onChange={(e) => setExtraHwidSlots(Number(e.target.value))}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        />
+                    {renewParam && renewalLicense ? (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono font-black text-foreground">{renewalLicense.hwid_limit} Slots</span>
+                          <span className="text-[9px] font-mono text-muted-foreground">
+                            ({PRO_BASE_HWID} base + {renewalLicense.hwid_limit - PRO_BASE_HWID} extra)
+                          </span>
+                        </div>
+                        {renewalLicense.hwid_limit > PRO_BASE_HWID && (
+                          <p className="text-[9px] text-muted-foreground font-mono leading-normal">
+                            Includes original extra slots. Total includes +${((renewalLicense.hwid_limit - PRO_BASE_HWID) * EXTRA_HWID_PRICE_USD).toFixed(2)} USD slot pricing.
+                          </p>
+                        )}
                       </div>
-                      <div className="flex justify-between items-center text-[8.5px] font-mono text-muted-foreground/70 px-0.5">
-                        <span>{PRO_BASE_HWID} Base</span>
-                        <span className="text-primary font-bold">Geser untuk tambah (+{extraHwidSlots} slots)</span>
-                        <span>{PRO_MAX_HWID} Max</span>
-                      </div>
-                      <p className="text-[9px] text-muted-foreground/60 font-mono">
-                        {PRO_BASE_HWID} base + {extraHwidSlots} extra = {PRO_BASE_HWID + extraHwidSlots}/{PRO_MAX_HWID} slots
-                      </p>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-0 border border-border rounded-md overflow-hidden bg-card">
+                            <button
+                              type="button"
+                              onClick={() => setExtraHwidSlots(Math.max(0, extraHwidSlots - 1))}
+                              disabled={extraHwidSlots === 0}
+                              className="px-2.5 py-1.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                            >−</button>
+                            <span className="px-3 py-1.5 text-[12px] font-mono font-black text-foreground border-x border-border min-w-[40px] text-center">
+                              {extraHwidSlots}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setExtraHwidSlots(Math.min(PRO_MAX_HWID - PRO_BASE_HWID, extraHwidSlots + 1))}
+                              disabled={extraHwidSlots >= PRO_MAX_HWID - PRO_BASE_HWID}
+                              className="px-2.5 py-1.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                            >+</button>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-foreground">
+                              {PRO_BASE_HWID + extraHwidSlots} Total Slots
+                            </span>
+                            {extraHwidSlots > 0 && (
+                              <span className="text-[9px] text-primary font-mono">+${(extraHwidSlots * EXTRA_HWID_PRICE_USD).toFixed(2)} USD</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5 mt-1">
+                          <div className="relative w-full h-2 bg-secondary rounded-full overflow-hidden flex items-center group cursor-pointer border border-border/40">
+                            {/* Full Progress Fill Line */}
+                            <div
+                              className="bg-primary h-full rounded-full transition-all duration-75"
+                              style={{ width: `${((PRO_BASE_HWID + extraHwidSlots) / PRO_MAX_HWID) * 100}%` }}
+                            />
+                            {/* Transparent range slider overlay for drag interaction */}
+                            <input
+                              type="range"
+                              min={0}
+                              max={PRO_MAX_HWID - PRO_BASE_HWID}
+                              step={1}
+                              value={extraHwidSlots}
+                              onChange={(e) => setExtraHwidSlots(Number(e.target.value))}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                          </div>
+                          <div className="flex justify-between items-center text-[8.5px] font-mono text-muted-foreground/70 px-0.5">
+                            <span>{PRO_BASE_HWID} Base</span>
+                            <span className="text-primary font-bold">Geser untuk tambah (+{extraHwidSlots} slots)</span>
+                            <span>{PRO_MAX_HWID} Max</span>
+                          </div>
+                          <p className="text-[9px] text-muted-foreground/60 font-mono">
+                            {PRO_BASE_HWID} base + {extraHwidSlots} extra = {PRO_BASE_HWID + extraHwidSlots}/{PRO_MAX_HWID} slots
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
