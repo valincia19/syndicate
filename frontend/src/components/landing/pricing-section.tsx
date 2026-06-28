@@ -310,11 +310,11 @@ export default function PricingSection() {
                     <span className="text-current/50 text-sm font-medium line-through">
                       {premPricing.original}
                     </span>
-                    <div className="flex items-baseline gap-2">
-                      <div className="text-current relative flex h-15 items-center text-5xl font-medium">
+                    <div className="flex flex-wrap items-baseline gap-2 w-full min-w-0">
+                      <div className="text-current relative flex h-auto py-1 items-center text-3xl sm:text-4xl font-medium tracking-tight whitespace-nowrap">
                         <span>{premPricing.price}</span>
                       </div>
-                      <span className="rounded-md bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-500 dark:bg-black dark:text-white dark:border dark:border-white/15 -translate-y-2">
+                      <span className="rounded-md bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-500 dark:bg-black dark:text-white dark:border dark:border-white/15 shrink-0">
                         {premPricing.discount}
                       </span>
                     </div>
@@ -376,11 +376,11 @@ export default function PricingSection() {
                     <span className="text-muted-foreground/50 text-sm font-medium line-through">
                       {proPricing.original}
                     </span>
-                    <div className="flex items-baseline gap-2">
-                      <div className="relative flex h-15 items-center text-5xl font-medium">
+                    <div className="flex flex-wrap items-baseline gap-2 w-full min-w-0">
+                      <div className="relative flex h-auto py-1 items-center text-3xl sm:text-4xl font-medium tracking-tight whitespace-nowrap">
                         <span>{proPricing.price}</span>
                       </div>
-                      <span className="rounded-md bg-black/10 px-2 py-0.5 text-xs font-bold text-black border border-black/10 dark:bg-amber-500/20 dark:text-amber-400 dark:border-0 -translate-y-2">
+                      <span className="rounded-md bg-black/10 px-2 py-0.5 text-xs font-bold text-black border border-black/10 dark:bg-amber-500/20 dark:text-amber-400 dark:border-0 shrink-0">
                         {proPricing.discount}
                       </span>
                     </div>
