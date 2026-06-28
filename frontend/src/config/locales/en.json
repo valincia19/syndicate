@@ -633,5 +633,6 @@
   "changelogVer090Date": "May 20, 2026",
   "changelogVer090Title": "VALINC Syndicate 0.9.0 — Private Beta",
   "changelogVer090Item1": "[New] Core executor bytecode VM loader and initial dashboard prototypes.",
-  "changelogVer090Item2": "[Improved] Optimized WebSocket telemetry for real-time remote panel server status."
+  "changelogVer090Item2": "[Improved] Optimized WebSocket telemetry for real-time remote panel server status.",
+  "renewalSlotsNotice": "Note: Your existing extra slots (+{slots} slots) will be preserved and extended for free. You will not be charged for them again during renewal."
 }

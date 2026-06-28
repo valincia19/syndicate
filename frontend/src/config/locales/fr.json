@@ -633,5 +633,6 @@
   "changelogVer090Date": "20 mai 2026",
   "changelogVer090Title": "VALINC Syndicate 0.9.0 — Bêta Privée",
   "changelogVer090Item1": "[Nouveau] Chargeur VM bytecode et prototypes initiaux du tableau de bord.",
-  "changelogVer090Item2": "[Amélioré] Optimisation de la télémétrie WebSocket pour le statut du panneau distant."
+  "changelogVer090Item2": "[Amélioré] Optimisation de la télémétrie WebSocket pour le statut du panneau distant.",
+  "renewalSlotsNotice": "Note: Vos slots supplémentaires existants (+{slots} slots) seront conservés et prolongés gratuitement. Aucun frais supplémentaire ne sera facturé pour ces slots lors du renouvellement."
 }

@@ -633,5 +633,6 @@
   "changelogVer090Date": "20 Mei 2026",
   "changelogVer090Title": "VALINC Syndicate 0.9.0 — Beta Privat",
   "changelogVer090Item1": "[Baru] Loader VM bytecode eksekutor inti dan prototipe dashboard awal.",
-  "changelogVer090Item2": "[Peningkatan] Optimasi telemetri WebSocket untuk status server panel remote real-time."
+  "changelogVer090Item2": "[Peningkatan] Optimasi telemetri WebSocket untuk status server panel remote real-time.",
+  "renewalSlotsNotice": "Catatan: Slot ekstra yang sudah Anda miliki (+{slots} slot) akan dipertahankan dan diperpanjang secara gratis. Anda tidak akan dikenakan biaya tambahan lagi untuk slot tersebut saat perpanjangan."
 }

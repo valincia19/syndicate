@@ -121,10 +121,14 @@ class PaymentController {
 
       // Extra HWID slots - only for Pro plan
       let extraHwidSlots = 0;
-      if (plan === 'pro' && extraHwidRaw) {
-        extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
-        const extraUSD = extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD;
-        amountIDR += Math.ceil(extraUSD * usdRate);
+      if (plan === 'pro') {
+        if (renewLicense) {
+          extraHwidSlots = renewLicense.hwid_limit > PRO_BASE_HWID ? (renewLicense.hwid_limit - PRO_BASE_HWID) : 0;
+        } else if (extraHwidRaw) {
+          extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
+          const extraUSD = extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD;
+          amountIDR += Math.ceil(extraUSD * usdRate);
+        }
       }
 
       let discountPercent = 0;
@@ -270,11 +274,15 @@ class PaymentController {
 
       // Extra HWID slots - only for Pro plan
       let extraHwidSlots = 0;
-      if (plan === 'pro' && extraHwidRaw) {
-        extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
-        const extraUSD = extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD;
-        priceUSD += extraUSD;
-        amountIDR += Math.ceil(extraUSD * usdRate);
+      if (plan === 'pro') {
+        if (renewLicense) {
+          extraHwidSlots = renewLicense.hwid_limit > PRO_BASE_HWID ? (renewLicense.hwid_limit - PRO_BASE_HWID) : 0;
+        } else if (extraHwidRaw) {
+          extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
+          const extraUSD = extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD;
+          priceUSD += extraUSD;
+          amountIDR += Math.ceil(extraUSD * usdRate);
+        }
       }
 
       let discountPercent = 0;
@@ -918,9 +926,13 @@ class PaymentController {
 
       // Extra HWID slots - only for Pro plan
       let extraHwidSlots = 0;
-      if (plan === 'pro' && extraHwidRaw) {
-        extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
-        amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
+      if (plan === 'pro') {
+        if (renewLicense) {
+          extraHwidSlots = renewLicense.hwid_limit > PRO_BASE_HWID ? (renewLicense.hwid_limit - PRO_BASE_HWID) : 0;
+        } else if (extraHwidRaw) {
+          extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
+          amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
+        }
       }
 
       let discountPercent = 0;
@@ -1065,9 +1077,13 @@ class PaymentController {
  
       // Extra HWID slots - only for Pro plan
       let extraHwidSlots = 0;
-      if (plan === 'pro' && extraHwidRaw) {
-        extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
-        amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
+      if (plan === 'pro') {
+        if (renewLicense) {
+          extraHwidSlots = renewLicense.hwid_limit > PRO_BASE_HWID ? (renewLicense.hwid_limit - PRO_BASE_HWID) : 0;
+        } else if (extraHwidRaw) {
+          extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
+          amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
+        }
       }
  
       let discountPercent = 0;
@@ -1248,9 +1264,13 @@ class PaymentController {
  
       // Extra HWID slots - only for Pro plan
       let extraHwidSlots = 0;
-      if (plan === 'pro' && extraHwidRaw) {
-        extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
-        amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
+      if (plan === 'pro') {
+        if (renewLicense) {
+          extraHwidSlots = renewLicense.hwid_limit > PRO_BASE_HWID ? (renewLicense.hwid_limit - PRO_BASE_HWID) : 0;
+        } else if (extraHwidRaw) {
+          extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
+          amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
+        }
       }
  
       let discountPercent = 0;

@@ -668,5 +668,6 @@
   "changelogVer090Date": "2026年5月20日",
   "changelogVer090Title": "VALINC Syndicate 0.9.0 — プライベートベータ",
   "changelogVer090Item1": "[新機能] コアエグゼキューターバイトコードVMローダーおよび初期ダッシュボードプロトタイプ。",
-  "changelogVer090Item2": "[改善] リモートパネルサーバー状態用のリアルタイムWebSocketテレメトリの最適化。"
+  "changelogVer090Item2": "[改善] リモートパネルサーバー状態用のリアルタイムWebSocketテレメトリの最適化。",
+  "renewalSlotsNotice": "注意: すでに所有している追加スロット（+{slots}スロット）は無料で維持・延長されます。更新時にこれらのスロットに対する追加料金は発生しません。"
 }

@@ -571,7 +571,8 @@ function PaymentContent() {
 
   const planData = pricesData?.plans[plan]
   const discountPercent = appliedVoucher ? appliedVoucher.discount_percent : 0
-  const extraHwidUSD = plan === 'pro' ? extraHwidSlots * EXTRA_HWID_PRICE_USD : 0
+  const isRenewal = !!renewParam
+  const extraHwidUSD = (plan === 'pro' && !isRenewal) ? extraHwidSlots * EXTRA_HWID_PRICE_USD : 0
   const extraHwidIDR = planData ? Math.ceil(extraHwidUSD * (planData.price_idr / planData.price_usd)) : 0
   const baseDiscountIDR = planData ? (planData.original_idr - planData.price_idr) : 0
   const voucherDiscountIDR = planData ? Math.ceil((planData.price_idr + extraHwidIDR) * (discountPercent / 100)) : 0
@@ -1058,8 +1059,8 @@ function PaymentContent() {
                           </span>
                         </div>
                         {renewalLicense.hwid_limit > PRO_BASE_HWID && (
-                          <p className="text-[9px] text-muted-foreground font-mono leading-normal">
-                            Includes original extra slots. Total includes +${((renewalLicense.hwid_limit - PRO_BASE_HWID) * EXTRA_HWID_PRICE_USD).toFixed(2)} USD slot pricing.
+                          <p className="text-[9.5px] text-emerald-500 font-bold font-mono leading-normal">
+                            {tKey("renewalSlotsNotice").replace("{slots}", String(renewalLicense.hwid_limit - PRO_BASE_HWID))}
                           </p>
                         )}
                       </div>
