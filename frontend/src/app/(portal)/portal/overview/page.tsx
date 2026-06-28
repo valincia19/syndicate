@@ -214,21 +214,24 @@ export default function OverviewPage() {
             </span>
           </div>
           <div className="flex flex-col gap-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-mono font-black text-foreground tracking-tight">
-                {isLoadingLicenses ? "-" : `${activeDevices} / ${totalSlots}`}
-              </span>
-              <span className="text-[10px] font-bold text-muted-foreground uppercase">{tKey("slots")}</span>
+            <div className="flex items-end justify-between gap-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-mono font-black text-foreground tracking-tight">
+                  {isLoadingLicenses ? "-" : `${activeDevices} / ${totalSlots}`}
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">{tKey("slots")}</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono pb-0.5">
+                <span>{tKey("activeKeysCard")}: <span className="text-foreground">{isLoadingLicenses ? "-" : activeKeys}</span></span>
+                <span>•</span>
+                <span>{tKey("totalSlotsLabel")}: <span className="text-foreground">{isLoadingLicenses ? "-" : totalSlots}</span></span>
+              </div>
             </div>
             <div className="w-full bg-secondary h-1.5 rounded-sm overflow-hidden border border-border">
               <div 
                 className="bg-primary h-full rounded-sm transition-all duration-300" 
                 style={{ width: isLoadingLicenses ? "0%" : `${Math.min(100, utilizationPercent)}%` }}
               />
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono pt-1">
-              <span>{tKey("activeKeysCard")}: <span className="text-foreground">{isLoadingLicenses ? "-" : activeKeys}</span></span>
-              <span>{tKey("totalSlotsLabel")}: <span className="text-foreground">{isLoadingLicenses ? "-" : totalSlots}</span></span>
             </div>
           </div>
         </div>
