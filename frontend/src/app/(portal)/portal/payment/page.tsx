@@ -189,6 +189,7 @@ interface RenewalLicense {
   tier: "free" | "premium" | "pro"
   status: "unused" | "active" | "revoked" | "expired"
   expires_at: string | null
+  hwid_limit: number
 }
 
 function formatIDR(amount: number) {
