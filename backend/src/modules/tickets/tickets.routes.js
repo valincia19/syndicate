@@ -9,10 +9,10 @@
 const express = require('express');
 const router = express.Router();
 const ticketController = require('./tickets.controller');
-const { authenticateToken, authorizeRoles } = require('../../middleware/auth.middleware');
+const { authenticateToken, authorizeRoles, requireEmailVerified } = require('../../middleware/auth.middleware');
 
 // All ticket routes require authentication
-router.use(authenticateToken);
+router.use(authenticateToken, requireEmailVerified);
 
 // Create a new ticket
 router.post('/', ticketController.createTicket.bind(ticketController));

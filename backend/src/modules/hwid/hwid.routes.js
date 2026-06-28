@@ -2,9 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('./hwid.controller');
-const { authenticateToken, authorizeRoles } = require('../../middleware/auth.middleware');
+const { authenticateToken, authorizeRoles, requireEmailVerified } = require('../../middleware/auth.middleware');
 
-router.use(authenticateToken);
+router.use(authenticateToken, requireEmailVerified);
 
 // User-facing: get HWIDs for their own license
 router.get('/by-license/:licenseId', ctrl.byLicenseForUser.bind(ctrl));

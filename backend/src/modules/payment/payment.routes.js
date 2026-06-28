@@ -5,6 +5,21 @@ const authMiddleware = require('../../middleware/auth.middleware');
 
 const rawBodyParser = express.raw({ type: 'application/json' });
 
+// Global authentication and verification middleware for all routes except webhook callbacks
+router.use((req, res, next) => {
+  if (req.path.startsWith('/callback/')) {
+    return next();
+  }
+  return authMiddleware.authenticateToken(req, res, next);
+});
+
+router.use((req, res, next) => {
+  if (req.path.startsWith('/callback/')) {
+    return next();
+  }
+  return authMiddleware.requireEmailVerified(req, res, next);
+});
+
 router.post(
   '/qris/create-order',
   authMiddleware.authenticateToken,

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('./licenses.controller');
-const { authenticateToken, authorizeRoles } = require('../../middleware/auth.middleware');
+const { authenticateToken, authorizeRoles, requireEmailVerified } = require('../../middleware/auth.middleware');
 
 const validate = require('../../middleware/validate.middleware');
 const {
@@ -12,7 +12,7 @@ const {
   lookupQuerySchema,
 } = require('./licenses.schema');
 
-router.use(authenticateToken);
+router.use(authenticateToken, requireEmailVerified);
 
 router.get('/my', ctrl.myLicenses.bind(ctrl));
 router.get('/lookup', authorizeRoles('owner', 'admin', 'staff'), validate(lookupQuerySchema, 'query'), ctrl.lookup.bind(ctrl));

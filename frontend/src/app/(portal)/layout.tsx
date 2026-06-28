@@ -72,7 +72,7 @@ function PortalShell({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!user) {
+  if (!user || (!user.verified && !user.discord_id)) {
     // Redirect is triggered in useEffect above - render null while navigating
     return null
   }

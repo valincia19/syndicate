@@ -74,6 +74,8 @@ const authenticateToken = async (req, res, next) => {
       role: user.role,
       name: user.name || null,
       username: user.username || null,
+      verified: Boolean(user.verified === true || user.verified === 1 || user.verified == 1),
+      discord_id: user.discord_id || null,
     };
     
     next();
@@ -103,4 +105,18 @@ const authorizeRoles = (...allowedRoles) => {
   };
 };
 
-module.exports = { authenticateToken, authorizeRoles };
+// Email verification requirement middleware
+const requireEmailVerified = (req, res, next) => {
+  if (!req.user) {
+    return next(new AppError('Not authenticated', 401));
+  }
+
+  // Bypass email verification for Discord-linked users or verified users
+  if (!req.user.verified && !req.user.discord_id) {
+    return next(new AppError('Email verification required. Please verify your email first.', 403));
+  }
+
+  next();
+};
+
+module.exports = { authenticateToken, authorizeRoles, requireEmailVerified };

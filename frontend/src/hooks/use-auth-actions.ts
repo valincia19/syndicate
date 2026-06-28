@@ -72,8 +72,12 @@ export function useAuthActions() {
         const authUser = buildAuthUser(apiUser as ApiUser)
         setUser(authUser)
 
-        // Push AFTER user is set so portal layout sees user immediately
-        router.push("/portal/overview")
+        // Redirect directly based on verification state to prevent visual blinks
+        if (!authUser.verified && !authUser.discord_id) {
+          router.push("/verify")
+        } else {
+          router.push("/portal/overview")
+        }
       } catch (err: unknown) {
         if (err instanceof ApiError) {
           const msg = err.message.toLowerCase()
@@ -108,7 +112,12 @@ export function useAuthActions() {
         const authUser = buildAuthUser(apiUser as ApiUser)
         setUser(authUser)
 
-        router.push("/portal/overview")
+        // Redirect directly based on verification state to prevent visual blinks
+        if (!authUser.verified && !authUser.discord_id) {
+          router.push("/verify")
+        } else {
+          router.push("/portal/overview")
+        }
       } catch (err: unknown) {
         if (err instanceof ApiError) {
           const msg = err.message.toLowerCase()
