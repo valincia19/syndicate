@@ -1,28 +1,44 @@
 "use client"
 
-import { useEffect } from "react"
-import { Suspense } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { useLanguage } from "@/components/providers/language-provider"
 import { useAuth } from "@/context/auth-context"
 import { LoginForm } from "@/components/auth/login-form"
 
-export default function LoginPage() {
-  const { t } = useLanguage()
-  const { isAuthenticated } = useAuth()
+function LoginRedirectHandler() {
+  const { isAuthenticated, isLoading, signOut } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const errorParam = searchParams.get("error")
+  const reasonParam = searchParams.get("reason")
 
-  // Redirect to portal if already logged in
   useEffect(() => {
-    if (isAuthenticated) {
+    // If there is an explicit error or reason param (e.g. unauthorized/expired), clear stale session
+    if (errorParam || reasonParam) {
+      if (isAuthenticated) {
+        signOut()
+      }
+      return
+    }
+
+    // Only redirect to portal if authenticated AND not loading
+    if (!isLoading && isAuthenticated) {
       router.push("/portal/overview")
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isLoading, errorParam, reasonParam, router, signOut])
+
+  return null
+}
+
+export default function LoginPage() {
+  const { t } = useLanguage()
 
   return (
     <AuthLayout title="VALINC SYNDICATE" description={t("loginDesc")}>
       <Suspense fallback={<div className="text-sm font-mono text-center text-muted-foreground animate-pulse py-8">Loading login...</div>}>
+        <LoginRedirectHandler />
         <LoginForm />
       </Suspense>
     </AuthLayout>
