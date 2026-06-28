@@ -164,6 +164,10 @@ class AuthController {
   async discordCallback(req, res, next) {
     const env = require('../../config/env');
     const targetFrontend = getFrontendUrl(req, env);
+    let targetRedirect = env.discord.redirectUri;
+    if (!targetRedirect || targetRedirect.includes('localhost')) {
+      targetRedirect = `${getBackendUrl(req, env)}/v1/auth/discord/callback`;
+    }
     try {
       const { code, state } = req.query;
       const { getRedis } = require('../../config/redis');
@@ -193,7 +197,7 @@ class AuthController {
 
       await redis.del(stateKey);
       
-      const { token, user } = await authService.discordLogin(code);
+      const { token, user } = await authService.discordLogin(code, targetRedirect);
       logger.info('Auth:Discord', `Discord OAuth login successful: email=${user?.email || 'N/A'} username=${user?.username || 'N/A'} id=${user?.id || 'N/A'}`);
       
       res.cookie('auth_token', token, getAuthCookieOptions(env));

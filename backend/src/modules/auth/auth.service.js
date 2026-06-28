@@ -215,9 +215,11 @@ class AuthService {
    * Exchanges code for token, retrieves profile, and logs in or creates user
    * @param {string} code - OAuth2 authorization code
    */
-  async discordLogin(code) {
+  async discordLogin(code, reqRedirectUri = null) {
     const crypto = require('crypto');
     const env = require('../../config/env');
+
+    const redirectUri = reqRedirectUri || env.discord.redirectUri;
 
     // 1. Exchange OAuth code for access token
     const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
@@ -230,7 +232,7 @@ class AuthService {
         client_secret: env.discord.clientSecret,
         grant_type: 'authorization_code',
         code,
-        redirect_uri: env.discord.redirectUri,
+        redirect_uri: redirectUri,
       }).toString(),
     });
 
