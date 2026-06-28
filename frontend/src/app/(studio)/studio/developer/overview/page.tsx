@@ -148,7 +148,7 @@ export default function DeveloperOverviewPage() {
           {statCards.map((stat, i) => (
             <div key={i} className="rounded-xl border border-border bg-card p-3.5 shadow-xs">
               <div className="text-lg font-bold text-foreground font-mono leading-none">
-                {stat.value.toLocaleString()}
+                {stat.value.toLocaleString('en-US')}
               </div>
               <div className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mt-0.5">{stat.label}</div>
               <div className="text-[9px] text-muted-foreground/50 font-mono mt-0.5">{stat.sub}</div>

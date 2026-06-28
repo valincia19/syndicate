@@ -308,7 +308,7 @@ export default function AdminActivityPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-card p-3.5 shadow-xs">
           <div className="text-lg font-bold text-foreground font-mono leading-none">
-            {totalLogs.toLocaleString()}
+            {totalLogs.toLocaleString('en-US')}
           </div>
           <div className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mt-0.5">Total Audit Logs</div>
           <div className="text-[9px] text-muted-foreground/50 font-mono mt-0.5">system-wide actions</div>
@@ -316,7 +316,7 @@ export default function AdminActivityPage() {
 
         <div className="rounded-xl border border-border bg-card p-3.5 shadow-xs">
           <div className="text-lg font-bold text-foreground font-mono leading-none">
-            {new Set(logs.map(l => l.user_email)).size.toLocaleString()}
+            {new Set(logs.map(l => l.user_email)).size.toLocaleString('en-US')}
           </div>
           <div className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mt-0.5">Active Users Cataloged</div>
           <div className="text-[9px] text-muted-foreground/50 font-mono mt-0.5">distinct users in view</div>

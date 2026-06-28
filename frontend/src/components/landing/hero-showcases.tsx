@@ -879,7 +879,7 @@ export const Hero3Showcase = memo(function Hero3Showcase({ isActive = true }: { 
                         <span className="text-[11px] font-bold text-zinc-300 truncate block">{u.id}</span>
                         <span className="text-[8.5px] text-zinc-500">{u.role}</span>
                       </div>
-                      <span className="text-[10px] text-[oklch(0.78_0.14_65/0.8)] font-bold">{u.whitelisted.toLocaleString()}</span>
+                      <span className="text-[10px] text-[oklch(0.78_0.14_65/0.8)] font-bold">{u.whitelisted.toLocaleString('en-US')}</span>
                     </div>
                   ))}
                 </div>

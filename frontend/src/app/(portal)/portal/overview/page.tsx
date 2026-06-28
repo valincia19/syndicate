@@ -244,12 +244,12 @@ export default function OverviewPage() {
           <div className="flex flex-col gap-0.5">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-black text-foreground tracking-tight">
-                {execStats ? Number(execStats.total).toLocaleString() : '-'}
+                {execStats ? Number(execStats.total).toLocaleString('en-US') : '-'}
               </span>
               <span className="text-[10px] font-bold text-muted-foreground uppercase">{tKey("runs")}</span>
               {execStats && execStats.today > 0 && (
                 <span className="text-[10px] font-mono text-emerald-500 font-medium ml-1">
-                  (+{execStats.today.toLocaleString()} today)
+                  (+{execStats.today.toLocaleString('en-US')} today)
                 </span>
               )}
             </div>

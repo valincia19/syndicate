@@ -100,7 +100,7 @@ export default function OwnerFinancePage() {
                   style={{ height: `${(data.amount / maxRevenue) * 100}%` }}
                 >
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-popover border border-border text-[9px] font-mono text-popover-foreground px-1.5 py-0.5 rounded shadow-xs pointer-events-none whitespace-nowrap">
-                    ${(data.amount).toLocaleString()}
+                    ${(data.amount).toLocaleString('en-US')}
                   </div>
                 </div>
                 <div className="text-[10px] text-muted-foreground font-mono mt-2 uppercase">{data.month}</div>
