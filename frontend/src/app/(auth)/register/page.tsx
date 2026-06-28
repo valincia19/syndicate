@@ -15,14 +15,12 @@ function RegisterRedirectHandler() {
   const reasonParam = searchParams.get("reason")
 
   useEffect(() => {
-    // If there is an explicit error or reason param, clean up URL and clear stale session
+    // If there is an explicit error or reason param, clear stale session and replace route to clean searchParams
     if (errorParam || reasonParam) {
-      if (typeof window !== "undefined") {
-        window.history.replaceState(null, "", window.location.pathname)
-      }
       if (isAuthenticated) {
         signOut()
       }
+      router.replace("/register")
       return
     }
 
