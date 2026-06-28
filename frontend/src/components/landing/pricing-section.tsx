@@ -253,7 +253,7 @@ export default function PricingSection() {
                   </div>
                 </div>
 
-                <Button size={"lg"} className="w-full">
+                <Button size={"lg"} className="w-full cursor-pointer" onClick={() => window.location.href = "https://keyauth.vinzhub.com"}>
                   {t("planFreeBtn")}
                 </Button>
               </div>
