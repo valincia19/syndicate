@@ -1,17 +1,19 @@
 'use client'
 
 import { useEffect } from 'react'
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/auth-context'
 
 export default function StudioPage() {
   const { user, isLoading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     if (isLoading) return
 
     if (!user) {
-      redirect('/login?error=unauthorized')
+      router.push('/login?error=unauthorized')
+      return
     }
 
     // Route based on role
@@ -19,22 +21,22 @@ export default function StudioPage() {
     
     switch (role) {
       case 'owner':
-        redirect('/studio/owner')
+        router.push('/studio/owner')
         break
       case 'admin':
-        redirect('/studio/admin')
+        router.push('/studio/admin')
         break
       case 'developer':
-        redirect('/studio/developer')
+        router.push('/studio/developer')
         break
       case 'staff':
-        redirect('/studio/staff')
+        router.push('/studio/staff')
         break
       default:
         // No studio access
-        redirect('/portal/overview')
+        router.push('/portal/overview')
     }
-  }, [user, isLoading])
+  }, [user, isLoading, router])
 
   // Loading state
   return (
