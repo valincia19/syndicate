@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { useCallback, useEffect, useState } from "react"
 import { useLanguage } from "@/components/providers/language-provider"
+import { ExecutionPreviewCard } from "@/components/landing/execution-preview-card"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -130,16 +131,10 @@ export function FeatureCards() {
                   className={`absolute inset-0 transition-all duration-500 ease-in-out ${
                     activeCard === 2
                       ? "blur-0 scale-100 opacity-100"
-                      : "scale-95 opacity-0 blur-sm"
+                      : "scale-95 opacity-0 blur-sm pointer-events-none"
                   }`}
                 >
-                  <Image
-                    src="/templates/ai-icons-1.jpg"
-                    alt="Bento Grid Dashboard"
-                    width={1920}
-                    height={1080}
-                    className="aspect-video h-full w-full object-cover"
-                  />
+                  <ExecutionPreviewCard />
                 </div>
               </div>
             </div>
