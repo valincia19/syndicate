@@ -141,4 +141,11 @@ router.get(
   (req, res, next) => paymentController.getAllTransactions(req, res, next)
 );
 
+router.get(
+  '/admin/finance-stats',
+  authMiddleware.authenticateToken,
+  authMiddleware.authorizeRoles('owner'),
+  (req, res, next) => paymentController.getFinanceStats(req, res, next)
+);
+
 module.exports = router;

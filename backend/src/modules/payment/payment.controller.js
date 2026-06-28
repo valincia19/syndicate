@@ -1335,6 +1335,22 @@ class PaymentController {
       next(error);
     }
   }
+
+  /**
+   * GET /v1/payment/admin/finance-stats
+   * Ambil statistik finansial sistem (untuk owner).
+   */
+  async getFinanceStats(req, res, next) {
+    try {
+      const stats = await paymentModel.getFinanceStats();
+      return res.status(200).json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new PaymentController();

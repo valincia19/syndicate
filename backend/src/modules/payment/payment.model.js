@@ -201,6 +201,85 @@ class PaymentModel {
       total
     };
   }
+
+  async getFinanceStats() {
+    const pool = db.getPool();
+
+    // 1. Get USD Rate
+    const rateRes = await pool.query("SELECT rate_to_idr FROM currencies WHERE code = 'USD' LIMIT 1").catch(() => null);
+    const usdRate = rateRes && rateRes.rows.length > 0 ? Number(rateRes.rows[0].rate_to_idr) : 15000;
+
+    // 2. Get YTD / Total revenue
+    const totalRevRes = await pool.query("SELECT COALESCE(SUM(amount), 0)::numeric AS total FROM payment_transactions WHERE status = 'paid'");
+    const totalRevIdr = Number(totalRevRes.rows[0]?.total || 0);
+
+    // 3. Get monthly revenue (this month)
+    const thisMonthRes = await pool.query(`
+      SELECT COALESCE(SUM(amount), 0)::numeric AS total 
+      FROM payment_transactions 
+      WHERE status = 'paid' AND created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
+    `);
+    const thisMonthIdr = Number(thisMonthRes.rows[0]?.total || 0);
+
+    // 4. Get last month revenue
+    const lastMonthRes = await pool.query(`
+      SELECT COALESCE(SUM(amount), 0)::numeric AS total 
+      FROM payment_transactions 
+      WHERE status = 'paid' 
+        AND created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP - INTERVAL '1 month') 
+        AND created_at < DATE_TRUNC('month', CURRENT_TIMESTAMP)
+    `);
+    const lastMonthIdr = Number(lastMonthRes.rows[0]?.total || 0);
+
+    // 5. Get Daily Average Revenue
+    const dailyAvgRes = await pool.query(`
+      SELECT COALESCE(SUM(amount), 0)::numeric / COALESCE(NULLIF(COUNT(DISTINCT created_at::date), 0), 1) AS avg
+      FROM payment_transactions 
+      WHERE status = 'paid'
+    `);
+    const dailyAvgIdr = Number(dailyAvgRes.rows[0]?.avg || 0);
+
+    // 6. Get 6-month Revenue trend
+    const trendRes = await pool.query(`
+      SELECT 
+        TO_CHAR(created_at, 'Mon') AS month,
+        EXTRACT(MONTH FROM created_at) AS month_num,
+        EXTRACT(YEAR FROM created_at) AS year_num,
+        COALESCE(SUM(amount), 0)::numeric AS amount
+      FROM payment_transactions
+      WHERE status = 'paid' AND created_at >= CURRENT_TIMESTAMP - INTERVAL '5 months'
+      GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at), EXTRACT(YEAR FROM created_at)
+      ORDER BY year_num ASC, month_num ASC
+    `);
+
+    // 7. Get breakdown by plan_type
+    const breakdownRes = await pool.query(`
+      SELECT 
+        plan_type,
+        COALESCE(SUM(amount), 0)::numeric AS amount,
+        COUNT(*)::int AS count
+      FROM payment_transactions
+      WHERE status = 'paid'
+      GROUP BY plan_type
+    `);
+
+    return {
+      usdRate,
+      totalRevenueUSD: totalRevIdr / usdRate,
+      thisMonthRevenueUSD: thisMonthIdr / usdRate,
+      lastMonthRevenueUSD: lastMonthIdr / usdRate,
+      dailyAverageUSD: dailyAvgIdr / usdRate,
+      trend: trendRes.rows.map(r => ({
+        month: r.month,
+        amount: Number(r.amount) / usdRate,
+      })),
+      breakdown: breakdownRes.rows.map(r => ({
+        plan_type: r.plan_type,
+        amount: Number(r.amount) / usdRate,
+        count: r.count,
+      }))
+    };
+  }
 }
 
 module.exports = new PaymentModel();
