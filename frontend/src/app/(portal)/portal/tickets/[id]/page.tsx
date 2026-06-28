@@ -178,7 +178,7 @@ export default function TicketDetailPage() {
   }, [ticket?.messages?.length])
 
   // ─── WebSocket: real-time updates ────────────────────────────
-  useTicketSocket(ticketId, {
+  const { status: wsStatus, reconnect: wsReconnect } = useTicketSocket(ticketId, {
     onMessage: (newMsg) => {
       setTicket((prev) => {
         if (!prev) return prev
@@ -352,6 +352,33 @@ export default function TicketDetailPage() {
                 <StatusIcon className="w-3 h-3" />
                 {status.label}
               </span>
+
+              {/* WebSocket Connection Status Widget */}
+              {wsStatus === 'connecting' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-amber-500/20 bg-amber-500/5 text-amber-600 dark:text-amber-500 text-[9px] font-mono">
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                  Connecting...
+                </span>
+              )}
+              {wsStatus === 'connected' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-500 text-[9px] font-mono">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  Live
+                </span>
+              )}
+              {wsStatus === 'offline' && (
+                <div className="flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-red-500/20 bg-red-500/5 text-red-600 dark:text-red-500 text-[9px] font-mono">
+                    Offline
+                  </span>
+                  <button
+                    onClick={wsReconnect}
+                    className="text-[9px] font-mono px-2 py-0.5 bg-primary text-primary-foreground hover:opacity-90 active:scale-98 rounded transition-all font-bold cursor-pointer"
+                  >
+                    Reconnect Manual
+                  </button>
+                </div>
+              )}
             </div>
             <h1 className="text-lg font-black tracking-tight text-foreground uppercase truncate">
               {ticket.subject}

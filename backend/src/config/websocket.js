@@ -35,9 +35,14 @@ const dashboardPayloadSchema = z.object({
   type: z.literal('subscribe_dashboard'),
 });
 
+const pingPayloadSchema = z.object({
+  type: z.literal('ping'),
+});
+
 const wsMessageSchema = z.discriminatedUnion('type', [
   subscribePayloadSchema,
   dashboardPayloadSchema,
+  pingPayloadSchema,
 ]);
 
 // ─── WSS Registry (singleton, avoids circular deps) ──────────────
@@ -338,6 +343,11 @@ function setupWebSocket(server) {
       }
 
       const data = parseResult.data;
+
+      if (data.type === 'ping') {
+        ws.send(JSON.stringify({ type: 'pong' }));
+        return;
+      }
 
       if (data.type === 'subscribe_dashboard') {
         ws.isDashboard = true;

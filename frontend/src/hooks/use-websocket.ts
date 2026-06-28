@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { tokenManager } from '@/lib/api'
 
 /**
@@ -20,9 +20,10 @@ import { tokenManager } from '@/lib/api'
  */
 
 const PROTOCOL_CHANNEL = 'ticket-ws.v1'
-const RECONNECT_BASE_MS = 500
+const RECONNECT_BASE_MS = 1000
 const RECONNECT_MAX_MS = 30_000
 const PING_INTERVAL_MS = 25_000
+const MAX_ATTEMPTS = 5
 
 interface WebSocketEvent {
   type: string
@@ -44,6 +45,8 @@ export function useTicketSocket(
   options: UseTicketSocketOptions = {}
 ) {
   const { onMessage, onStatus, onError } = options
+
+  const [status, setStatus] = useState<'connecting' | 'connected' | 'offline'>('connecting')
 
   // Refs keep latest callbacks without re-triggering the effect
   const onMessageRef = useRef(onMessage)
@@ -70,6 +73,8 @@ export function useTicketSocket(
 
   const connect = useCallback(() => {
     if (!ticketId || !mountedRef.current) return
+
+    setStatus('connecting')
 
     // Clean up existing connection
     if (wsRef.current) {
@@ -140,6 +145,7 @@ export function useTicketSocket(
       ws.onopen = () => {
         console.info('[WS] Connected successfully', { ticketId })
         attemptRef.current = 0 // Reset backoff on successful connection
+        setStatus('connected')
 
         // Subscribe to the ticket
         ws.send(JSON.stringify({ type: 'subscribe', ticketId }))
@@ -217,18 +223,26 @@ export function useTicketSocket(
         // Don't reconnect if unmounted or if explicitly closed (1000 = normal)
         if (!mountedRef.current || event.code === 1000) return
 
-        // Exponential backoff reconnection
+        if (attemptRef.current >= MAX_ATTEMPTS) {
+          console.warn('[WS] Max reconnect attempts reached. Setting offline.', { ticketId })
+          setStatus('offline')
+          return
+        }
+
+        setStatus('connecting')
+
+        // Exponential backoff reconnection with jitter (±25%)
         const delay = Math.min(
           RECONNECT_BASE_MS * Math.pow(2, attemptRef.current),
           RECONNECT_MAX_MS
         )
-        // Add jitter (±25%) to prevent thundering herd
-        const jitter = delay * (0.75 + Math.random() * 0.5)
+        const jitter = delay * 0.25 * (Math.random() * 2 - 1)
+        const nextDelay = Math.max(0, delay + jitter)
         attemptRef.current++
 
         reconnectTimerRef.current = setTimeout(() => {
           connectRef.current()
-        }, jitter)
+        }, nextDelay)
       }
 
       ws.onerror = () => {
@@ -285,6 +299,14 @@ export function useTicketSocket(
       }
     }
   }, [connect])
+
+  const reconnect = useCallback(() => {
+    attemptRef.current = 0
+    setStatus('connecting')
+    connect()
+  }, [connect])
+
+  return { status, reconnect }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────
