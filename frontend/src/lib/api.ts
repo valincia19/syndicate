@@ -16,7 +16,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || ""
 // The httpOnly cookie (auth_token) cannot be read by JS, so we mirror the JWT
 // here for two purposes: Authorization header on REST calls, and sub-protocol
 // authentication on WebSocket upgrade. Clearing on logout/signout keeps this safe.
-const LS_TOKEN_KEY = 'vinz_jwt'
+const LS_TOKEN_KEY = 'valinc_jwt'
 let inMemoryToken: string | null = null
 
 export const tokenManager = {
@@ -119,7 +119,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
           try {
             localStorage.removeItem('auth_user')
-            localStorage.removeItem('vinz_jwt')
+            localStorage.removeItem(LS_TOKEN_KEY)
           } catch { /* ignore storage errors */ }
 
           window.location.href = `/login?reason=${reason}`
