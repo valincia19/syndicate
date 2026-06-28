@@ -1,10 +1,22 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/components/providers/language-provider"
+import { useAuth } from "@/context/auth-context"
 
 export function HeroSection() {
   const { t } = useLanguage()
+  const { isAuthenticated } = useAuth()
+  const router = useRouter()
+
+  const handleAction = () => {
+    if (isAuthenticated) {
+      router.push("/portal")
+    } else {
+      router.push("/login")
+    }
+  }
 
   return (
     <section className="relative pt-40 pb-16">
@@ -22,7 +34,9 @@ export function HeroSection() {
           </div>
 
           <div className="flex justify-center">
-            <Button size="lg">{t("heroBtn")}</Button>
+            <Button size="lg" onClick={handleAction}>
+              {t("heroBtn")}
+            </Button>
           </div>
         </div>
       </div>
