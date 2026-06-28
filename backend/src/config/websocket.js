@@ -189,7 +189,10 @@ function setupWebSocket(server) {
 
   // ─── HTTP → WebSocket Upgrade Handler ──────────────────────────
   server.on('upgrade', async (req, socket, head) => {
-    const remoteIp = req.socket.remoteAddress;
+    const remoteIp = req.headers['cf-connecting-ip'] || 
+                     req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                     req.socket.remoteAddress || 
+                     '127.0.0.1';
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
     // Only handle our WS path
@@ -282,7 +285,10 @@ function setupWebSocket(server) {
     logger.info('WebSocket', 'Client connected', {
       userId: user.id,
       role: user.role,
-      ip: req.socket.remoteAddress,
+      ip: req.headers['cf-connecting-ip'] || 
+          req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+          req.socket.remoteAddress || 
+          '127.0.0.1',
     });
 
     // Confirm connection
