@@ -10,7 +10,7 @@ import { useLanguage } from "@/components/providers/language-provider"
 
 import { getBackendUrl } from "@/lib/config"
 
-const getBaseApi = () => getBackendUrl()
+const BASE_API = getBackendUrl()
 
 interface PlanData {
   price_usd: number
