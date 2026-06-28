@@ -426,7 +426,7 @@ const Hero2ThreatAlertFeed = memo(function Hero2ThreatAlertFeed({ isActive = tru
           "Heuristic Scan Bypassed",
         ]
         const types = ["BYPASS", "SPOOF", "PROTECT", "SECURITY"]
-        const nextId = prev.length + 1
+        const nextId = (prev[0]?.id || 0) + 1
         const newAlert = {
           id: nextId,
           type: types[Math.floor(Math.random() * types.length)],
