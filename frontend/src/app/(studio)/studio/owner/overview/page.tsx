@@ -72,9 +72,9 @@ export default function OwnerOverviewPage() {
             api.get<{ status: string; data: { logs: ActivityLog[] } }>('/v1/activity/admin/all?limit=5&offset=0')
           ])
 
-          setSystemStats(sysRes.data?.data?.stats || null)
+          setSystemStats(sysRes.data?.stats || null)
           setFinanceStats(finRes.data || null)
-          setRecentLogs(actRes.data?.data?.logs || [])
+          setRecentLogs(actRes.data?.logs || [])
         } catch (err) {
           console.error('Failed to load overview data:', err)
         } finally {
