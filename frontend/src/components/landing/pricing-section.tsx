@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Check, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -7,9 +8,140 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/components/providers/language-provider"
 
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
+interface PlanData {
+  price_usd: number
+  original_usd: number
+  price_idr: number
+  original_idr: number
+  duration: number
+  hwid_count: number
+  discount_percent: number
+  label: string
+  equivalents?: Record<string, { amount: number; original: number }>
+}
+
+interface PlanPricesData {
+  base_currency: string
+  plans: Record<string, PlanData>
+}
+
+const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  ID: 'IDR', US: 'USD', GB: 'GBP', JP: 'JPY', SG: 'SGD', MY: 'MYR',
+  TH: 'THB', PH: 'PHP', VN: 'VND', KR: 'KRW', CN: 'CNY', IN: 'INR',
+  AU: 'AUD', CA: 'CAD', HK: 'HKD', SA: 'SAR', AE: 'AED', BR: 'BRL',
+  TR: 'TRY', RU: 'RUB', MX: 'MXN',
+  DE: 'EUR', FR: 'EUR', IT: 'EUR', ES: 'EUR', NL: 'EUR', BE: 'EUR',
+  AT: 'EUR', IE: 'EUR', PT: 'EUR', FI: 'EUR', GR: 'EUR',
+}
+
+const CURRENCY_SYMBOLS: Record<string, { symbol: string; locale: string }> = {
+  USD: { symbol: '$', locale: 'en-US' },
+  EUR: { symbol: '€', locale: 'de-DE' },
+  GBP: { symbol: '£', locale: 'en-GB' },
+  JPY: { symbol: '¥', locale: 'ja-JP' },
+  SGD: { symbol: 'S$', locale: 'en-SG' },
+  MYR: { symbol: 'RM', locale: 'ms-MY' },
+  AUD: { symbol: 'A$', locale: 'en-AU' },
+  CAD: { symbol: 'C$', locale: 'en-CA' },
+  KRW: { symbol: '₩', locale: 'ko-KR' },
+  CNY: { symbol: '¥', locale: 'zh-CN' },
+  INR: { symbol: '₹', locale: 'en-IN' },
+  THB: { symbol: '฿', locale: 'th-TH' },
+  PHP: { symbol: '₱', locale: 'en-PH' },
+  VND: { symbol: '₫', locale: 'vi-VN' },
+  HKD: { symbol: 'HK$', locale: 'en-HK' },
+  BRL: { symbol: 'R$', locale: 'pt-BR' },
+  TRY: { symbol: '₺', locale: 'tr-TR' },
+  RUB: { symbol: '₽', locale: 'ru-RU' },
+  MXN: { symbol: 'MX$', locale: 'es-MX' },
+  SAR: { symbol: 'SAR', locale: 'ar-SA' },
+  AED: { symbol: 'AED', locale: 'ar-AE' },
+  IDR: { symbol: 'Rp', locale: 'id-ID' },
+}
+
+function detectUserCurrency(): string {
+  if (typeof navigator === 'undefined') return 'USD'
+  try {
+    const locale = navigator.language || 'en-US'
+    const parts = locale.split('-')
+    const country = parts[parts.length - 1]?.toUpperCase()
+    if (country && COUNTRY_TO_CURRENCY[country]) return COUNTRY_TO_CURRENCY[country]
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+    if (tz.startsWith('Asia/Jakarta') || tz.startsWith('Asia/Makassar') || tz.startsWith('Asia/Jayapura')) return 'IDR'
+    return 'USD'
+  } catch {
+    return 'USD'
+  }
+}
+
+function formatPriceDisplay(amount: number, currencyCode: string): string {
+  if (currencyCode === 'IDR') {
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount)
+  }
+  const info = CURRENCY_SYMBOLS[currencyCode]
+  const symbol = info ? info.symbol : currencyCode
+  const digits = ['JPY', 'KRW', 'VND'].includes(currencyCode) ? 0 : 2
+  const formatted = amount.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+  return `${symbol}${formatted}`
+}
+
 export default function PricingSection() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
+
+  const [pricesData, setPricesData] = useState<PlanPricesData | null>(null)
+  const [detectedCurrency, setDetectedCurrency] = useState<string>('USD')
+
+  // Auto-detect currency
+  useEffect(() => {
+    if (language === 'id') {
+      setDetectedCurrency('IDR')
+      return
+    }
+    let isMounted = true
+    const detectAsync = async () => {
+      try {
+        const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) })
+        if (res.ok) {
+          const data = await res.json()
+          if (isMounted && data && data.currency) {
+            setDetectedCurrency(data.currency)
+            return
+          }
+        }
+      } catch {}
+      if (isMounted) {
+        setDetectedCurrency(detectUserCurrency())
+      }
+    }
+    detectAsync()
+    return () => { isMounted = false }
+  }, [language])
+
+  // Fetch live plan prices from backend
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const res = await fetch(`${BASE_API}/v1/currency/plans`)
+        const data = await res.json()
+        if (data.success) {
+          setPricesData(data.data)
+        }
+      } catch {
+        // Fallback static structure matching backend currency API
+        setPricesData({
+          base_currency: 'USD',
+          plans: {
+            premium: { price_usd: 10, original_usd: 25, price_idr: 200000, original_idr: 500000, duration: 30, hwid_count: 5, discount_percent: 60, label: 'Premium' },
+            pro:     { price_usd: 30, original_usd: 75, price_idr: 600000, original_idr: 1500000, duration: 90, hwid_count: 12, discount_percent: 60, label: 'Pro' },
+          },
+        })
+      }
+    }
+    fetchPrices()
+  }, [])
 
   const freeFeatures = [
     { text: t("planFreeFeat1"), unlocked: true },
@@ -56,6 +188,26 @@ export default function PricingSection() {
     { text: t("planProFeat12"), unlocked: true },
   ]
 
+  // Helper to resolve dynamic price strings based on detected currency
+  const getPlanPriceDisplay = (planKey: "premium" | "pro") => {
+    const plan = pricesData?.plans[planKey]
+    if (!plan) return { price: t(planKey === "premium" ? "planPremiumPrice" : "planProPrice"), original: t(planKey === "premium" ? "planPremiumOriginalPrice" : "planProOriginalPrice"), discount: t(planKey === "premium" ? "planPremiumDiscount" : "planProDiscount") }
+
+    const isIDR = detectedCurrency === 'IDR'
+    const priceVal = isIDR ? plan.price_idr : plan.equivalents?.[detectedCurrency]?.amount ?? plan.price_usd
+    const origVal = isIDR ? plan.original_idr : plan.equivalents?.[detectedCurrency]?.original ?? plan.original_usd
+    const currCode = (isIDR || plan.equivalents?.[detectedCurrency]) ? detectedCurrency : 'USD'
+
+    return {
+      price: formatPriceDisplay(priceVal, currCode),
+      original: formatPriceDisplay(origVal, currCode),
+      discount: `-${plan.discount_percent}%`
+    }
+  }
+
+  const premPricing = getPlanPriceDisplay("premium")
+  const proPricing = getPlanPriceDisplay("pro")
+
   return (
     <div id="pricing" className="flex w-full flex-col items-center justify-center gap-2">
       <div className="flex items-center justify-center gap-6 self-stretch px-4 py-8">
@@ -74,14 +226,12 @@ export default function PricingSection() {
         <div className="flex w-full items-start justify-center">
           {/* Left diagonal-line decoration */}
           <div className="relative w-4 self-stretch overflow-hidden sm:w-6 md:w-8 lg:w-12">
-            <div className="absolute -top-30 -left-10 flex w-40 flex-col items-start justify-start">
-              {Array.from({ length: 120 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="outline-primary/40 h-4 origin-top-left -rotate-45 self-stretch outline outline-offset-[-0.25px]"
-                />
-              ))}
-            </div>
+            <div 
+              className="absolute inset-0 opacity-40" 
+              style={{ 
+                backgroundImage: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.15) 0px, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 8px)" 
+              }} 
+            />
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-center md:flex-row md:gap-6">
@@ -158,14 +308,14 @@ export default function PricingSection() {
                 <div className="flex flex-col items-start justify-start gap-2 self-stretch">
                   <div className="flex flex-col items-start justify-start gap-1">
                     <span className="text-current/50 text-sm font-medium line-through">
-                      {t("planPremiumOriginalPrice")}
+                      {premPricing.original}
                     </span>
                     <div className="flex items-baseline gap-2">
                       <div className="text-current relative flex h-15 items-center text-5xl font-medium">
-                        <span>{t("planPremiumPrice")}</span>
+                        <span>{premPricing.price}</span>
                       </div>
                       <span className="rounded-md bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-500 dark:bg-black dark:text-white dark:border dark:border-white/15 -translate-y-2">
-                        {t("planPremiumDiscount")}
+                        {premPricing.discount}
                       </span>
                     </div>
                     <div className="text-current text-sm font-medium opacity-80">
@@ -174,7 +324,7 @@ export default function PricingSection() {
                   </div>
                 </div>
                 
-                <Button size={"lg"} className="w-full bg-background text-foreground hover:bg-background/90" onClick={() => router.push("/portal/payment?plan=premium")}>
+                <Button size={"lg"} className="w-full bg-background text-foreground hover:bg-background/90 cursor-pointer" onClick={() => router.push("/portal/payment?plan=premium")}>
                   {t("planPremiumBtn")}
                 </Button>
               </div>
@@ -224,14 +374,14 @@ export default function PricingSection() {
                 <div className="flex flex-col items-start justify-start gap-2 self-stretch">
                   <div className="flex flex-col items-start justify-start gap-1">
                     <span className="text-muted-foreground/50 text-sm font-medium line-through">
-                      {t("planProOriginalPrice")}
+                      {proPricing.original}
                     </span>
                     <div className="flex items-baseline gap-2">
                       <div className="relative flex h-15 items-center text-5xl font-medium">
-                        <span>{t("planProPrice")}</span>
+                        <span>{proPricing.price}</span>
                       </div>
                       <span className="rounded-md bg-black/10 px-2 py-0.5 text-xs font-bold text-black border border-black/10 dark:bg-amber-500/20 dark:text-amber-400 dark:border-0 -translate-y-2">
-                        {t("planProDiscount")}
+                        {proPricing.discount}
                       </span>
                     </div>
                     <div className="text-sm font-medium text-muted-foreground">
@@ -239,7 +389,7 @@ export default function PricingSection() {
                     </div>
                   </div>
                 </div>
-                <Button size={"lg"} className="w-full" onClick={() => router.push("/portal/payment?plan=pro")}>
+                <Button size={"lg"} className="w-full cursor-pointer" onClick={() => router.push("/portal/payment?plan=pro")}>
                   {t("planProBtn")}
                 </Button>
               </div>
@@ -274,14 +424,12 @@ export default function PricingSection() {
 
           {/* Right diagonal-line decoration */}
           <div className="relative w-4 self-stretch overflow-hidden sm:w-6 md:w-8 lg:w-12">
-            <div className="absolute -top-30 -left-10 flex w-40 flex-col items-start justify-start">
-              {Array.from({ length: 120 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="outline-primary/40 h-4 origin-top-left -rotate-45 self-stretch outline outline-offset-[-0.25px]"
-                />
-              ))}
-            </div>
+            <div 
+              className="absolute inset-0 opacity-40" 
+              style={{ 
+                backgroundImage: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.15) 0px, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 8px)" 
+              }} 
+            />
           </div>
         </div>
       </div>

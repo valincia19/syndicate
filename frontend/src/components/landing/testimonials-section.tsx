@@ -18,19 +18,19 @@ export default function TestimonialsSection() {
       quote: t("testi1Quote"),
       name: t("testi1Author"),
       company: t("testi1Role"),
-      image: "https://github.com/shadcn.png",
+      image: "https://cdn.vinzhub.com/images/Feedback/37a9907239dfc21aa35b130db469734d.png",
     },
     {
       quote: t("testi2Quote"),
       name: t("testi2Author"),
       company: t("testi2Role"),
-      image: "https://github.com/vercel.png",
+      image: "https://cdn.vinzhub.com/images/Feedback/a_50c761c670f80578057818a4f04fa10a.gif",
     },
     {
       quote: t("testi3Quote"),
       name: t("testi3Author"),
       company: t("testi3Role"),
-      image: "https://github.com/claude.png",
+      image: "https://cdn.vinzhub.com/images/Feedback/45c366874521af52f716e1d7509c7332.png",
     },
   ]
 
