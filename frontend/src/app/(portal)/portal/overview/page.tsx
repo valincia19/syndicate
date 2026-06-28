@@ -174,7 +174,7 @@ export default function OverviewPage() {
             {t("portalOverview")}
           </h1>
           <p className="text-[11px] text-muted-foreground">
-            Identity: <span className="font-mono text-foreground font-bold">{user?.username || user?.name || user?.email || "Guest"}</span> - Access Node: <span className="font-mono text-primary font-bold uppercase">{user?.role ? `${user.role} Access` : "Premium Lifetime"}</span>
+            Identity: <span className="font-mono text-foreground font-bold">{user?.username || user?.name || user?.email || "Guest"}</span> - Access Node: <span className="font-mono text-primary font-bold uppercase">{user?.role || "Premium Lifetime"}</span>
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -191,7 +191,7 @@ export default function OverviewPage() {
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{tKey("accountBalance")}</span>
             <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-mono bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-              +2.4% this week
+              Active
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
