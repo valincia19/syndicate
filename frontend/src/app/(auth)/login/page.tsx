@@ -15,8 +15,11 @@ function LoginRedirectHandler() {
   const reasonParam = searchParams.get("reason")
 
   useEffect(() => {
-    // If there is an explicit error or reason param (e.g. unauthorized/expired), clear stale session
+    // If there is an explicit error or reason param, clean up URL and clear stale session
     if (errorParam || reasonParam) {
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, "", window.location.pathname)
+      }
       if (isAuthenticated) {
         signOut()
       }
