@@ -9,7 +9,7 @@ import {
 import Link from "next/link"
 import { tokenManager } from "@/lib/api"
 
-const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || ""
 
 type PlanKey = "premium" | "pro"
 

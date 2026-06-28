@@ -74,7 +74,7 @@ function publishBadge(status: string) {
 }
 
 function ReleasesContent() {
-  const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  const BASE_API = process.env.NEXT_PUBLIC_API_URL || ""
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
   const [mounted, setMounted] = useState(false)

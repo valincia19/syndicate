@@ -94,7 +94,7 @@ function ScriptsContent(): React.ReactNode {
   const [isPublishing, setIsPublishing] = useState(false)
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
     '[SYSTEM] Developer console initialized. Listening to Roblox executions...',
-    '[WS] WebSocket connection to ws://localhost:5000/ws established.'
+    '[WS] WebSocket connection initialized.'
   ])
 
   // Helper to append console logs

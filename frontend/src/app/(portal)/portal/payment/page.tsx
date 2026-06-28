@@ -24,7 +24,7 @@ import { useLanguage } from "@/components/providers/language-provider"
 import { tokenManager } from "@/lib/api"
 import { PaymentLogo } from "@/components/payment/payment-logo"
 
-const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || ""
 
 // Feature keys per plan (i18n)
 const PLAN_FEATURES: Record<string, string[]> = {

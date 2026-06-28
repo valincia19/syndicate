@@ -10,7 +10,7 @@ import Link from "next/link"
 import { tokenManager } from "@/lib/api"
 import { PaymentLogo } from "@/components/payment/payment-logo"
 
-const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || ""
 
 type PlanKey = "premium" | "pro"
 

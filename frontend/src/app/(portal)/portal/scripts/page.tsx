@@ -35,7 +35,7 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   Tycoon: "from-emerald-400/20 to-green-600/20 text-emerald-400 border-emerald-400/30",
 }
 
-const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || ""
 
 function getGradient(category: string): string {
   return CATEGORY_GRADIENTS[category] || "from-slate-500/20 to-slate-600/20 text-slate-400 border-slate-500/30"

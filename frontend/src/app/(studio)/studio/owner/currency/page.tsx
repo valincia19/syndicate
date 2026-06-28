@@ -10,7 +10,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
-const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || ""
 
 function getFlagEmoji(code: string) {
   const flags: Record<string, string> = {
