@@ -25,14 +25,22 @@ function detectBrowserLanguage(): Language {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === "undefined") return "EN"
-    const savedLang = localStorage.getItem("language") as Language
-    if (savedLang && savedLang in dictionaries) return savedLang
-    return detectBrowserLanguage()
-  })
+  const [language, setLanguageState] = useState<Language>("EN")
 
   useEffect(() => {
+    // Restore language preference on client after hydration to avoid SSR mismatch
+    queueMicrotask(() => {
+      const savedLang = localStorage.getItem("language") as Language
+      if (savedLang && savedLang in dictionaries) {
+        setLanguageState(savedLang)
+      } else {
+        const detected = detectBrowserLanguage()
+        if (detected !== "EN") {
+          setLanguageState(detected)
+        }
+      }
+    })
+
     // Background IP Geolocation check for even higher precision
     if (!localStorage.getItem("language")) {
       fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })

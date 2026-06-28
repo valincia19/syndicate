@@ -18,3 +18,16 @@ backend/crypto_logos/
 *.log
 .DS_Store
 Thumbs.db
+
+# Exclude non-app directories & local tools/configs
+/keyauth/
+/design-assets-hub-v2/
+/memory/
+/.obsidian/
+/.vscode/
+/.claude/
+
+# Database dumps
+*.sql
+!/init-db.sql
+

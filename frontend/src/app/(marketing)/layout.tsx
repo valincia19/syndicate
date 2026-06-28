@@ -1,5 +1,7 @@
 
 
+import Script from "next/script"
+
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -66,7 +68,8 @@ export default function MarketingLayout({
 }) {
   return (
     <>
-      <script
+      <Script
+        id="faq-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />

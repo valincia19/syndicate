@@ -95,7 +95,7 @@ export default function PricingSection() {
   // Auto-detect currency
   useEffect(() => {
     if (language === 'ID') {
-      setDetectedCurrency('IDR')
+      queueMicrotask(() => setDetectedCurrency('IDR'))
       return
     }
     let isMounted = true
