@@ -130,9 +130,11 @@ export function useTicketSocket(
       wsUrl = `${locProtocol}//${window.location.host}/ws`
     }
 
+    // Append token as query parameter to bypass Cloudflare/Nginx subprotocol header constraints
+    wsUrl = `${wsUrl}?token=${encodeURIComponent(token)}`
+
     try {
-      // Pass JWT via sub-protocol header - NOT as a query parameter
-      const ws = new WebSocket(wsUrl, [`${PROTOCOL_CHANNEL}`, `bearer_${token}`])
+      const ws = new WebSocket(wsUrl, [`${PROTOCOL_CHANNEL}`])
       wsRef.current = ws
 
       ws.onopen = () => {

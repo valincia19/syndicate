@@ -115,7 +115,20 @@ const wssRegistry = {
  * Returns decoded payload or null.
  */
 function authenticateUpgrade(req) {
-  // 1. Try Sec-WebSocket-Protocol header (sent via new WebSocket(url, protocols))
+  // 1. Try token from query parameter (highly robust, bypassing header size / WAF subprotocol issues)
+  try {
+    const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    const queryToken = url.searchParams.get('token');
+    if (queryToken) {
+      return jwt.verify(queryToken, env.jwtSecret);
+    }
+  } catch (err) {
+    logger.warn('WebSocket', 'Query JWT verification failed', {
+      error: err.message,
+    });
+  }
+
+  // 2. Try Sec-WebSocket-Protocol header (sent via new WebSocket(url, protocols))
   const protocolHeader = req.headers['sec-websocket-protocol'];
   if (protocolHeader) {
     // Format: "ticket-ws.v1, bearer_<jwt>"
