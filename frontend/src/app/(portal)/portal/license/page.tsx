@@ -75,6 +75,12 @@ function Modal({ open, onClose, title, children }: { open: boolean; onClose: () 
   )
 }
 
+function isExpiringSoon(expiresAt: string | null) {
+  if (!expiresAt) return false
+  const diff = new Date(expiresAt).getTime() - Date.now()
+  return diff <= 3 * 24 * 60 * 60 * 1000
+}
+
 export default function PortalLicensePage() {
   const router = useRouter()
   const { t } = useLanguage()
@@ -339,7 +345,7 @@ export default function PortalLicensePage() {
 
                   {/* Status + Arrow */}
                   <div className="flex items-center gap-2.5 shrink-0">
-                    {((l.tier === 'premium' || l.tier === 'pro') && l.expires_at && (new Date(l.expires_at).getTime() - Date.now() <= 3 * 24 * 60 * 60 * 1000)) && (
+                    {(l.tier === 'pro' && isExpiringSoon(l.expires_at)) && (
                       <button
                         onClick={(e) => {
                           e.preventDefault()

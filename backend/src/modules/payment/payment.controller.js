@@ -35,6 +35,9 @@ class PaymentController {
     if (license.user_id !== userId) {
       throw new Error('This license key does not belong to you');
     }
+    if (license.tier !== 'pro') {
+      throw new Error('Only Pro tier licenses can be renewed');
+    }
     if (license.tier !== plan) {
       throw new Error(`Plan mismatch: License tier is ${license.tier.toUpperCase()}, but plan requested is ${plan.toUpperCase()}`);
     }

@@ -260,6 +260,11 @@ function PaymentContent() {
           setRenewalError("License key not found.")
           return
         }
+        // Verify tier is Pro
+        if (lic.tier !== 'pro') {
+          setRenewalError("Only Pro tier license keys can be renewed.")
+          return
+        }
         // Verify tier matches plan
         if (lic.tier !== plan) {
           setRenewalError(`Plan mismatch. This license key is for ${lic.tier.toUpperCase()}, but you requested a renewal for ${plan.toUpperCase()}.`)

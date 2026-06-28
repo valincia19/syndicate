@@ -86,6 +86,12 @@ function statusBadge(status: string) {
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border text-[9px] font-mono bg-red-500/5 text-red-600 dark:text-red-500 border-red-500/20"><span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />Revoked</span>
 }
 
+function isExpiringSoon(expiresAt: string | null) {
+  if (!expiresAt) return false
+  const diff = new Date(expiresAt).getTime() - Date.now()
+  return diff <= 3 * 24 * 60 * 60 * 1000
+}
+
 export default function LicenseDetailPage() {
   const params = useParams()
   const [license, setLicense] = useState<License | null>(null)
@@ -246,7 +252,7 @@ export default function LicenseDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {((license.tier === 'premium' || license.tier === 'pro') && license.expires_at && (new Date(license.expires_at).getTime() - Date.now() <= 3 * 24 * 60 * 60 * 1000)) && (
+          {(license.tier === 'pro' && isExpiringSoon(license.expires_at)) && (
             <Link
               href={`/portal/payment?plan=${license.tier}&renew=${license.id}`}
               className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold font-mono rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-all cursor-pointer shrink-0"
