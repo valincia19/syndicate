@@ -93,4 +93,18 @@ export const authService = {
   async verifyEmail(code: string): Promise<{ status: string; message: string }> {
     return api.post<{ status: string; message: string }>("/v1/auth/verify-email", { code })
   },
+
+  /**
+   * Request password reset link
+   */
+  async forgotPassword(email: string): Promise<{ status: string; message: string }> {
+    return api.post<{ status: string; message: string }>("/v1/auth/forgot-password", { email })
+  },
+
+  /**
+   * Reset password using token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<{ status: string; message: string }> {
+    return api.post<{ status: string; message: string }>("/v1/auth/reset-password", { token, newPassword })
+  },
 }
