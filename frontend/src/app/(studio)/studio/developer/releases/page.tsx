@@ -7,8 +7,10 @@ import { api } from '@/lib/api'
 import { ClientDate } from '@/components/ui/client-date'
 import {
   CheckCircle, Clock, Loader2, Globe, Plus,
-  Tag, Eye, Trash2, Gamepad2, FileCode, Pencil, Copy, Link,
+  Tag, Eye, Trash2, Gamepad2, FileCode, Pencil, Copy, Link, AlertTriangle
 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface Release {
   id: string
@@ -482,50 +484,41 @@ function ReleasesContent() {
           </div>
         </div>
       )}
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
-          onClick={() => setDeleteConfirm(null)}
-        >
-          <div
-            className="relative w-full max-w-md bg-card border border-border rounded-xl shadow-lg animate-in zoom-in-95 duration-200 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
-                <Trash2 className="w-5 h-5 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-foreground">Delete Release</h3>
-                <p className="text-[11px] font-mono text-muted-foreground mt-1">
-                  Are you sure you want to delete <span className="font-bold text-foreground">{deleteConfirm.name}</span>?
-                </p>
-                <p className="text-[10px] font-mono text-red-500 mt-1">This action cannot be undone.</p>
-              </div>
-              <div className="flex items-center gap-2 justify-center pt-1">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2 text-[11px] font-mono text-muted-foreground hover:text-foreground border border-border bg-transparent hover:bg-muted/20 rounded-lg transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={actionLoading[deleteConfirm.id] === 'delete'}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-red-600 text-white text-[11px] font-mono font-bold rounded-lg hover:bg-red-700 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
-                >
-                  {actionLoading[deleteConfirm.id] === 'delete' ? (
-                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting...</>
-                  ) : (
-                    <><Trash2 className="w-3.5 h-3.5" /> Delete</>
-                  )}
-                </button>
-              </div>
-            </div>
+      {/* Modal: Delete Release Confirmation */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold text-red-500 uppercase tracking-wider font-mono flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4" />
+              Delete Release?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Are you sure you want to delete <span className="font-bold text-foreground">{deleteConfirm?.name}</span>? This action is permanent and cannot be undone.
+            </p>
+            <DialogFooter className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setDeleteConfirm(null)}
+                className="h-8 text-[10px] font-mono rounded-lg hover:bg-muted"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteConfirm ? actionLoading[deleteConfirm.id] === 'delete' : false}
+                className="h-8 text-[10px] font-mono rounded-lg bg-red-600 hover:bg-red-500 text-white shadow-none font-bold cursor-pointer"
+              >
+                {deleteConfirm && actionLoading[deleteConfirm.id] === 'delete' ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+                Delete Release
+              </Button>
+            </DialogFooter>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
