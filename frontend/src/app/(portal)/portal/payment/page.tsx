@@ -293,38 +293,8 @@ function PaymentContent() {
     }
   }, [renewParam, plan])
 
-  // Auto-detect user's local currency via IP geolocation and browser fallback
-  const [detectedCurrency, setDetectedCurrency] = useState<string>('IDR')
-  useEffect(() => {
-    let isMounted = true
-    const detectAsync = async () => {
-      try {
-        const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) })
-        if (res.ok) {
-          const data = await res.json()
-          if (isMounted && data && data.currency) {
-            setDetectedCurrency(data.currency)
-            return
-          }
-        }
-      } catch {}
-      try {
-        const res2 = await fetch('https://ip-api.com/json/?fields=countryCode,currency', { signal: AbortSignal.timeout(3000) })
-        if (res2.ok) {
-          const data2 = await res2.json()
-          if (isMounted && data2 && data2.currency) {
-            setDetectedCurrency(data2.currency)
-            return
-          }
-        }
-      } catch {}
-      if (isMounted) {
-        setDetectedCurrency(detectUserCurrency())
-      }
-    }
-    detectAsync()
-    return () => { isMounted = false }
-  }, [])
+  // Auto-detect user's local currency via browser fallback
+  const [detectedCurrency] = useState<string>(() => detectUserCurrency())
 
   const handleApplyVoucher = async (e: React.FormEvent) => {
     e.preventDefault()

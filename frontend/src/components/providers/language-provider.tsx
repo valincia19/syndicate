@@ -41,26 +41,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    // Background IP Geolocation check for even higher precision
-    if (!localStorage.getItem("language")) {
-      fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.country_code && !localStorage.getItem("language")) {
-            const cc = data.country_code.toUpperCase()
-            let geoLang: Language = "EN"
-            if (cc === "ID") geoLang = "ID"
-            else if (cc === "JP") geoLang = "JA"
-            else if (cc === "FR") geoLang = "FR"
-            
-            setLanguageState(geoLang)
-          }
-        })
-        .catch(() => {
-          // Ignore IP fetch errors
-        })
-    }
-
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "language" && e.newValue && e.newValue in dictionaries) {
         setLanguageState(e.newValue as Language)

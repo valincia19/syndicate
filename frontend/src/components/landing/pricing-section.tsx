@@ -29,14 +29,7 @@ interface PlanPricesData {
   plans: Record<string, PlanData>
 }
 
-const COUNTRY_TO_CURRENCY: Record<string, string> = {
-  ID: 'IDR', US: 'USD', GB: 'GBP', JP: 'JPY', SG: 'SGD', MY: 'MYR',
-  TH: 'THB', PH: 'PHP', VN: 'VND', KR: 'KRW', CN: 'CNY', IN: 'INR',
-  AU: 'AUD', CA: 'CAD', HK: 'HKD', SA: 'SAR', AE: 'AED', BR: 'BRL',
-  TR: 'TRY', RU: 'RUB', MX: 'MXN',
-  DE: 'EUR', FR: 'EUR', IT: 'EUR', ES: 'EUR', NL: 'EUR', BE: 'EUR',
-  AT: 'EUR', IE: 'EUR', PT: 'EUR', FI: 'EUR', GR: 'EUR',
-}
+
 
 const CURRENCY_SYMBOLS: Record<string, { symbol: string; locale: string }> = {
   USD: { symbol: '$', locale: 'en-US' },
@@ -94,30 +87,20 @@ export default function PricingSection() {
   const [pricesData, setPricesData] = useState<PlanPricesData | null>(null)
   const [detectedCurrency, setDetectedCurrency] = useState<string>('IDR')
 
-  // Auto-detect currency
   useEffect(() => {
+    let active = true
     if (language === 'ID') {
-      queueMicrotask(() => setDetectedCurrency('IDR'))
+      Promise.resolve().then(() => {
+        if (active) setDetectedCurrency('IDR')
+      })
       return
     }
-    let isMounted = true
-    const detectAsync = async () => {
-      try {
-        const res = await fetch('https://ip-api.com/json/?fields=countryCode,currency', { signal: AbortSignal.timeout(3000) })
-        if (res.ok) {
-          const data = await res.json()
-          if (isMounted && data && data.currency) {
-            setDetectedCurrency(data.currency)
-            return
-          }
-        }
-      } catch {}
-      if (isMounted) {
-        setDetectedCurrency(detectUserCurrency())
-      }
+    Promise.resolve().then(() => {
+      if (active) setDetectedCurrency(detectUserCurrency())
+    })
+    return () => {
+      active = false
     }
-    detectAsync()
-    return () => { isMounted = false }
   }, [language])
 
   // Fetch live plan prices from backend
