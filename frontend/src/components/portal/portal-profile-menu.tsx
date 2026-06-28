@@ -44,7 +44,8 @@ export function PortalProfileMenu() {
     if (isMobile) setOpenMobile(false)
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+      const { getBackendUrl } = await import("@/lib/config")
+      const backendUrl = getBackendUrl()
       await fetch(`${backendUrl}/v1/auth/logout`, {
         method: "POST",
         credentials: "include", // send the httpOnly cookie so backend can clear it

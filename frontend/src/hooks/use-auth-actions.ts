@@ -7,6 +7,8 @@ import { authService } from "@/services/auth"
 import { tokenManager, ApiError } from "@/lib/api"
 import type { LoginInput, RegisterInput } from "@/lib/validation/auth-schemas"
 
+import { getBackendUrl } from "@/lib/config"
+
 export interface AuthActionsError {
   email?: string
   username?: string
@@ -142,7 +144,7 @@ export function useAuthActions() {
   )
 
   const handleDiscordLogin = useCallback(() => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+    const backendUrl = getBackendUrl()
     window.location.href = `${backendUrl}/v1/auth/discord`
   }, [])
 
