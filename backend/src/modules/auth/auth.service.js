@@ -92,6 +92,19 @@ class AuthService {
       verified: 0,
     });
 
+    // ── Generate and send email verification code automatically ────
+    try {
+      const redis = getRedis();
+      if (redis) {
+        const verificationCode = crypto.randomInt(100000, 1000000).toString();
+        await redis.set(`verify_code:${newUser.id}`, verificationCode, { ex: 600 });
+        const emailUtil = require('../../utils/email');
+        await emailUtil.sendVerificationEmail(newUser.email, verificationCode);
+      }
+    } catch (err) {
+      logger.error('Service:Auth', 'Failed to send automatic verification email on register', { error: err.message });
+    }
+
     // ── Generate JWT Token (auto-login after registration) ────
     const token = jwt.sign(
       {
@@ -328,7 +341,7 @@ class AuthService {
   }
 
   /**
-   * Send Email Verification Code (simulated)
+   * Send Email Verification Code
    * @param {string} userId - UUID of the logged-in user
    */
   async sendVerificationCode(userId) {
@@ -354,16 +367,12 @@ class AuthService {
     
     await redis.set(`verify_code:${userId}`, code, { ex: 600 }); // Strict 10-minute TTL
 
-    // Log delivery (NEVER include the code itself, even in dev)
-    if (env.nodeEnv !== 'production') {
-      logger.info('Service:Auth:Email', 'Verification code generated (simulated send)', {
-        to: user.email,
-        expiresIn: '10 minutes',
-      });
-    }
+    // Send email using our new SMTP email utility
+    const emailUtil = require('../../utils/email');
+    await emailUtil.sendVerificationEmail(user.email, code);
 
     return {
-      message: 'Verification code generated and sent (simulated)',
+      message: 'Verification code successfully sent to your email',
     };
   }
 
@@ -408,6 +417,86 @@ class AuthService {
 
     return {
       message: 'Email verified successfully',
+    };
+  }
+  /**
+   * Forgot Password Link generation and email delivery
+   * @param {string} email
+   */
+  async forgotPassword(email) {
+    const user = await UserModel.findByEmail(email.toLowerCase());
+    // Security Best Practice: Don't reveal if user does not exist. Simply return success.
+    if (!user) {
+      return { message: 'If the email exists in our system, a password reset link has been sent.' };
+    }
+
+    // Generate a cryptographically secure random reset token
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // Store token in Redis mapped to userId with 1 hour TTL
+    const redis = getRedis();
+    if (!redis) {
+      throw new AppError('Password recovery service temporarily unavailable', 503);
+    }
+
+    await redis.set(`password_reset:${token}`, user.id, { ex: 3600 }); // 1 Hour TTL
+
+    // Send reset email
+    const emailUtil = require('../../utils/email');
+    const resetLink = `${env.frontendUrl}/reset-password?token=${token}`;
+    await emailUtil.sendForgotPasswordEmail(user.email, resetLink);
+
+    return {
+      message: 'If the email exists in our system, a password reset link has been sent.',
+    };
+  }
+
+  /**
+   * Reset Password using recovery token
+   * @param {string} token
+   * @param {string} newPassword
+   */
+  async resetPassword(token, newPassword) {
+    const redis = getRedis();
+    if (!redis) {
+      throw new AppError('Password recovery service temporarily unavailable', 503);
+    }
+
+    const userId = await redis.get(`password_reset:${token}`);
+    if (!userId) {
+      throw new AppError('Invalid or expired password reset token', 400);
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Validate new password strength
+    if (!newPassword || newPassword.length < 8) {
+      throw new AppError('Password must be at least 8 characters long', 400);
+    }
+    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      throw new AppError('Password must contain at least one letter and one number', 400);
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password in DB
+    await UserModel.update(userId, {
+      password: hashedPassword,
+    });
+
+    // Revoke token immediately
+    await redis.del(`password_reset:${token}`);
+
+    // Invalidate user profile cache
+    const cacheKey = `cache:user_profile:${userId}`;
+    await cacheUtility.del(cacheKey);
+
+    return {
+      message: 'Password has been reset successfully',
     };
   }
 }

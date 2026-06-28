@@ -104,6 +104,16 @@ const env = {
   linkvertise: {
     antiBypassToken: process.env.LINKVERTISE_ANTI_BYPASS_TOKEN || '',
   },
+  smtp: {
+    host: process.env.MAIL_HOST || 'sandbox.smtp.mailtrap.io',
+    port: parseInt(process.env.MAIL_PORT || '2525', 10),
+    user: process.env.MAIL_USERNAME || '',
+    pass: process.env.MAIL_PASSWORD || '',
+    fromEmail: process.env.MAIL_FROM_ADDRESS || 'noreply@valincsyndicate.com',
+    fromName: (process.env.MAIL_FROM_NAME && process.env.MAIL_FROM_NAME !== '${APP_NAME}')
+      ? process.env.MAIL_FROM_NAME
+      : 'VALINC SYNDICATE',
+  },
 };
 
 // Validate critical environment variables
@@ -146,6 +156,10 @@ const validateEnv = () => {
 
   if (!env.turnstile.secretKey) {
     logger.warn('Env', 'TURNSTILE_SECRET_KEY not set. Turnstile server-side siteverify will fail if enabled.');
+  }
+
+  if (!env.smtp.user || !env.smtp.pass) {
+    logger.warn('Env', 'SMTP credentials not fully configured. Email verification/delivery will be disabled.');
   }
 };
 

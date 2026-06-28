@@ -42,7 +42,7 @@ const verificationRateLimiter = async (req, res, next) => {
 
 const validate = require('../../middleware/validate.middleware');
 const { authRateLimiter } = require('../../middleware/rateLimiter.middleware');
-const { registerSchema, loginSchema, verifyEmailSchema } = require('./auth.schema');
+const { registerSchema, loginSchema, verifyEmailSchema, forgotPasswordSchema, resetPasswordSchema } = require('./auth.schema');
 
 // Public routes (protected with aggressive anti-bruteforce rate limiting)
 router.post('/register', authRateLimiter, validate(registerSchema, 'body'), authController.register.bind(authController));
@@ -50,6 +50,8 @@ router.post('/login', authRateLimiter, validate(loginSchema, 'body'), authContro
 router.post('/logout', authController.logout.bind(authController));
 router.get('/discord', authController.discordRedirect.bind(authController));
 router.get('/discord/callback', authController.discordCallback.bind(authController));
+router.post('/forgot-password', authRateLimiter, validate(forgotPasswordSchema, 'body'), authController.forgotPassword.bind(authController));
+router.post('/reset-password', authRateLimiter, validate(resetPasswordSchema, 'body'), authController.resetPassword.bind(authController));
 
 // Protected routes (require authentication)
 router.get('/profile', authenticateToken, authController.getProfile.bind(authController));

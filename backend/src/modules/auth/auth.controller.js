@@ -244,6 +244,42 @@ class AuthController {
       next(error);
     }
   }
+
+  /**
+   * Request password reset link
+   * POST /v1/auth/forgot-password
+   */
+  async forgotPassword(req, res, next) {
+    try {
+      const { email } = req.body;
+      const result = await authService.forgotPassword(email);
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Reset password using token
+   * POST /v1/auth/reset-password
+   */
+  async resetPassword(req, res, next) {
+    try {
+      const { token, newPassword } = req.body;
+      const result = await authService.resetPassword(token, newPassword);
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new AuthController();
