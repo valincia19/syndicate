@@ -118,6 +118,14 @@ const connectRedis = async () => {
 const getRedis = () => redisWrapper;
 
 /**
+ * Create a duplicate Redis client (useful for pub/sub subscribing)
+ */
+const createDuplicateClient = () => {
+  if (!redisClient) return null;
+  return redisClient.duplicate();
+};
+
+/**
  * Gracefully disconnect Redis
  */
 const disconnectRedis = async () => {
@@ -133,4 +141,6 @@ const disconnectRedis = async () => {
   }
 };
 
-module.exports = { connectRedis, getRedis, disconnectRedis };
+const getRawRedis = () => redisClient;
+
+module.exports = { connectRedis, getRedis, getRawRedis, createDuplicateClient, disconnectRedis };

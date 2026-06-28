@@ -57,12 +57,20 @@ const wssRegistry = {
     return this.instance;
   },
 
-  /**
-   * Broadcast a JSON event to all clients subscribed to a ticket.
-   * @param {string} ticketId
-   * @param {object} event - will be JSON.stringify'd
-   */
   broadcastToTicket(ticketId, event) {
+    const { getRawRedis } = require('./redis');
+    const rawRedis = getRawRedis();
+    if (rawRedis) {
+      rawRedis.publish(`ticket:room:${ticketId}`, JSON.stringify(event)).catch((err) => {
+        logger.error('WebSocket', 'Redis publish failed', { error: err.message });
+      });
+    } else {
+      // ponytail: fallback to local if Redis is offline
+      this.broadcastToLocalSubscribers(ticketId, event);
+    }
+  },
+
+  broadcastToLocalSubscribers(ticketId, event) {
     const wss = this.instance;
     if (!wss) return;
 
@@ -89,7 +97,7 @@ const wssRegistry = {
     });
 
     if (sent > 0) {
-      logger.debug('WebSocket', 'Broadcast', { ticketId, type: event.type, recipients: sent });
+      logger.debug('WebSocket', 'Local Broadcast', { ticketId, type: event.type, recipients: sent });
     }
   },
 
@@ -192,6 +200,24 @@ function setupWebSocket(server) {
 
   wssRegistry.set(wss);
 
+  // ponytail: setup Redis Pub/Sub subscriber
+  const { createDuplicateClient } = require('./redis');
+  const redisSub = createDuplicateClient();
+  if (redisSub) {
+    redisSub.psubscribe('ticket:room:*').catch((err) => {
+      logger.error('WebSocket', 'Redis PubSub subscription failed', { error: err.message });
+    });
+    redisSub.on('pmessage', (pattern, channel, message) => {
+      try {
+        const ticketId = channel.replace('ticket:room:', '');
+        const event = JSON.parse(message);
+        wssRegistry.broadcastToLocalSubscribers(ticketId, event);
+      } catch (err) {
+        logger.error('WebSocket', 'Failed to process PubSub message', { error: err.message });
+      }
+    });
+  }
+
   // ─── HTTP → WebSocket Upgrade Handler ──────────────────────────
   server.on('upgrade', async (req, socket, head) => {
     const xff = req.headers['x-forwarded-for'];
@@ -282,6 +308,13 @@ function setupWebSocket(server) {
     ws.userRole = user.role;
     ws.ticketId = null;
 
+    // ponytail: track active connection in Redis
+    const { getRawRedis } = require('./redis');
+    const rawRedis = getRawRedis();
+    if (rawRedis) {
+      rawRedis.sadd('ws:online_users', user.id).catch(() => {});
+    }
+
     // Heartbeat init
     ws.isAlive = true;
     ws.on('pong', () => { ws.isAlive = true; });
@@ -369,6 +402,14 @@ function setupWebSocket(server) {
 
     // ─── Close Handler ────────────────────────────────────────────
     ws.on('close', (code, reason) => {
+      // ponytail: remove active state from Redis
+      const { getRawRedis } = require('./redis');
+      const rawRedis = getRawRedis();
+      if (rawRedis) {
+        rawRedis.srem('ws:online_users', user.id).catch(() => {});
+        rawRedis.hdel('ws:user_rooms', user.id).catch(() => {});
+      }
+
       logger.info('WebSocket', 'Client disconnected', {
         userId: user.id,
         ticketId: ws.ticketId,
@@ -398,6 +439,9 @@ function setupWebSocket(server) {
   // ─── Cleanup on server close ────────────────────────────────────
   wss.on('close', () => {
     clearInterval(heartbeatTimer);
+    if (redisSub) {
+      redisSub.quit().catch(() => {});
+    }
   });
 
   logger.info('WebSocket', 'Server ready', { path: '/ws' });
@@ -418,11 +462,12 @@ async function handleSubscribe(ws, ticketId) {
   const ticketModel = require('../modules/tickets/tickets.model');
   const STAFF_ROLES = ['staff', 'admin', 'developer', 'owner'];
 
+  const cacheUtility = require('../utils/cache.utility');
   let ticket;
   try {
-    ticket = await ticketModel.findById(ticketId);
+    ticket = await cacheUtility.getOrSet(`cache:ticket:${ticketId}`, () => ticketModel.findById(ticketId), 600);
   } catch (err) {
-    logger.error('WebSocket', 'DB error during subscribe', { ticketId, error: err.message });
+    logger.error('WebSocket', 'Cache/DB error during subscribe', { ticketId, error: err.message });
     ws.send(JSON.stringify({ type: 'error', message: 'Failed to verify ticket access.' }));
     return;
   }
@@ -456,6 +501,11 @@ async function handleSubscribe(ws, ticketId) {
 
   // Subscribe
   ws.ticketId = ticketId;
+  const { getRawRedis } = require('./redis');
+  const rawRedis = getRawRedis();
+  if (rawRedis) {
+    rawRedis.hset('ws:user_rooms', ws.userId, ticketId).catch(() => {});
+  }
   ws.send(JSON.stringify({ type: 'subscribed', ticketId }));
   logger.debug('WebSocket', 'Client subscribed', { userId: ws.userId, ticketId });
 }

@@ -179,7 +179,7 @@ class TicketModel {
 
   async addMessage(data) {
     const pool = getPool();
-    const id = crypto.randomUUID();
+    const id = data.id || crypto.randomUUID();
     const { ticket_id, sender_id, sender_role, content } = data;
 
     await pool.query(
