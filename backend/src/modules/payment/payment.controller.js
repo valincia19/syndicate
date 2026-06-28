@@ -19,8 +19,31 @@ const PLAN_CONFIG = {
 const PRO_EXTRA_HWID_PRICE_USD = 0.5;  // per slot
 const PRO_MAX_HWID = 50;
 const PRO_BASE_HWID = 12;
+const activeLocks = new Set();
 
 class PaymentController {
+  /**
+   * Helper method to validate renewal license
+   * @private
+   */
+  async _validateRenewal(renewId, plan, userId) {
+    if (!renewId) return null;
+    const license = await licensesModel.findById(renewId);
+    if (!license) {
+      throw new Error('License key to renew not found');
+    }
+    if (license.user_id !== userId) {
+      throw new Error('This license key does not belong to you');
+    }
+    if (license.tier !== plan) {
+      throw new Error(`Plan mismatch: License tier is ${license.tier.toUpperCase()}, but plan requested is ${plan.toUpperCase()}`);
+    }
+    if (license.status === 'revoked') {
+      throw new Error('This license has been revoked and cannot be renewed');
+    }
+    return license;
+  }
+
   /**
    * Helper method to validate voucher and calculate discounted amount
    * @private
@@ -67,13 +90,23 @@ class PaymentController {
    */
   async createQRISOrder(req, res, next) {
     try {
-      const { plan, voucher: voucherCode, extra_hwid_slots: extraHwidRaw } = req.body;
+      const { plan, voucher: voucherCode, extra_hwid_slots: extraHwidRaw, renew } = req.body;
       const userId = req.user?.id;
 
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
       if (!plan || !PLAN_CONFIG[plan]) {
         return res.status(400).json({ success: false, error: `Invalid plan. Valid plans: ${Object.keys(PLAN_CONFIG).join(', ')}` });
+      }
+
+      // Validate renewal if present
+      let renewLicense = null;
+      if (renew) {
+        try {
+          renewLicense = await this._validateRenewal(renew, plan, userId);
+        } catch (rErr) {
+          return res.status(400).json({ success: false, error: rErr.message });
+        }
       }
 
       // Ambil kurs USD→IDR dari database (diisi owner via halaman currency)
@@ -115,7 +148,7 @@ class PaymentController {
       const expirySeconds = env.TOKOPAY_ORDER_EXPIRY_SECONDS || 86400;
       const expiredTs = Math.floor(Date.now() / 1000) + expirySeconds;
 
-      logger.info('PaymentController', `Creating QRIS order: plan=${plan} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode}`);
+      logger.info('PaymentController', `Creating QRIS order: plan=${plan} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode} renew=${renew || 'none'}`);
 
       const tokopayResult = await tokopayService.createOrder({
         ref_id: refId,
@@ -155,6 +188,7 @@ class PaymentController {
       // Simpan transaksi ke database
       await paymentModel.create({
         user_id: userId,
+        license_id: renewLicense ? renewLicense.id : null,
         ref_id: refId,
         trx_id: tpData.trx_id,
         payment_method: 'qris',
@@ -200,7 +234,7 @@ class PaymentController {
    */
   async createCryptoOrder(req, res, next) {
     try {
-      const { plan, coin, voucher: voucherCode, extra_hwid_slots: extraHwidRaw } = req.body;
+      const { plan, coin, voucher: voucherCode, extra_hwid_slots: extraHwidRaw, renew } = req.body;
       const userId = req.user?.id;
 
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -211,6 +245,16 @@ class PaymentController {
 
       if (!coin) {
         return res.status(400).json({ success: false, error: 'Crypto coin (e.g. usdttrc20) is required' });
+      }
+
+      // Validate renewal if present
+      let renewLicense = null;
+      if (renew) {
+        try {
+          renewLicense = await this._validateRenewal(renew, plan, userId);
+        } catch (rErr) {
+          return res.status(400).json({ success: false, error: rErr.message });
+        }
       }
 
       // Ambil kurs USD→IDR dari database untuk konversi & pencatatan DB (dalam IDR)
@@ -249,10 +293,10 @@ class PaymentController {
       const refId = `VSYN-${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
       
       const successUrl = `${env.frontendUrl}/portal/plans?payment=success&orderId=${refId}`;
-      const cancelUrl = `${env.frontendUrl}/portal/payment?plan=${plan}`;
+      const cancelUrl = `${env.frontendUrl}/portal/payment?plan=${plan}${renew ? `&renew=${renew}` : ''}`;
       const ipnCallbackUrl = `${env.backendUrl}/v1/payment/callback/nowpayments`;
 
-      logger.info('PaymentController', `Creating NOWPayments crypto order: plan=${plan} coin=${coin} price_usd=${priceUSD} amount_idr=${amountIDR} user=${userId} voucher=${appliedVoucherCode}`);
+      logger.info('PaymentController', `Creating NOWPayments crypto order: plan=${plan} coin=${coin} price_usd=${priceUSD} amount_idr=${amountIDR} user=${userId} voucher=${appliedVoucherCode} renew=${renew || 'none'}`);
 
       // 1. Create Invoice
       const nowpaymentsResult = await nowpaymentsService.createInvoice({
@@ -294,6 +338,7 @@ class PaymentController {
       // Simpan transaksi ke database (jumlah disimpan dalam IDR agar konsisten dengan admin panel/history)
       await paymentModel.create({
         user_id: userId,
+        license_id: renewLicense ? renewLicense.id : null,
         ref_id: refId,
         trx_id: npPaymentData.payment_id,
         payment_method: 'crypto',
@@ -699,43 +744,74 @@ class PaymentController {
       return null;
     }
 
+    if (refId) {
+      if (activeLocks.has(refId)) {
+        logger.warn('PaymentController', `License activation already in progress for ref_id ${refId}`);
+        const tx = await paymentModel.findByRefId(refId);
+        return tx?.license_id || null;
+      }
+      activeLocks.add(refId);
+      setTimeout(() => activeLocks.delete(refId), 300000); // 5 minutes lock
+    }
+
     // Ambil voucher_code jika ada pada transaksi
     let voucherCode = null;
+    let tx = null;
     if (refId) {
-      const tx = await paymentModel.findByRefId(refId);
+      tx = await paymentModel.findByRefId(refId);
       if (!tx) {
         logger.error('PaymentController', `Transaction not found for ref_id ${refId}`);
         return null;
-      }
-      if (tx.license_id) {
-        logger.warn('PaymentController', `License already activated for transaction ref_id ${refId}`);
-        return tx.license_id;
       }
       if (tx.voucher_code) {
         voucherCode = tx.voucher_code;
       }
     }
 
-    const licenseKey = `VSYN-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 6).toUpperCase()}`;
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + config.duration_days);
-
-    // Extra HWID slots from the transaction (Pro plan only)
+    let license;
     const txExtraHwid = (tx && tx.extra_hwid_slots) ? parseInt(tx.extra_hwid_slots, 10) : 0;
     const finalHwidLimit = config.hwid_count + txExtraHwid;
 
-    const license = await licensesModel.create({
-      user_id: userId,
-      license_key: licenseKey,
-      tier: planType,
-      hwid_limit: finalHwidLimit,
-      expires_at: expiresAt,
-      status: 'active',
-    });
+    if (tx && tx.license_id) {
+      // RENEWAL
+      const existingLicense = await licensesModel.findById(tx.license_id);
+      if (existingLicense) {
+        let finalExpiresAt = new Date();
+        if (existingLicense.expires_at && new Date(existingLicense.expires_at) > new Date()) {
+          finalExpiresAt = new Date(existingLicense.expires_at);
+        }
+        finalExpiresAt.setDate(finalExpiresAt.getDate() + config.duration_days);
 
-    // Link lisensi ke transaksi
-    if (refId && license && license.id) {
-      await paymentModel.linkLicense(refId, license.id);
+        license = await licensesModel.update(existingLicense.id, {
+          status: 'active',
+          tier: planType,
+          hwid_limit: finalHwidLimit,
+          expires_at: finalExpiresAt.toISOString(),
+        });
+        logger.info('PaymentController', `License renewed successfully: id=${license.id} key=${license.license_key} plan=${planType} new_expires=${finalExpiresAt.toISOString()}`);
+      }
+    }
+
+    if (!license) {
+      // NEW LICENSE
+      const licenseKey = `VSYN-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 6).toUpperCase()}`;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + config.duration_days);
+
+      license = await licensesModel.create({
+        user_id: userId,
+        license_key: licenseKey,
+        tier: planType,
+        hwid_limit: finalHwidLimit,
+        expires_at: expiresAt,
+        status: 'active',
+      });
+
+      // Link lisensi ke transaksi
+      if (refId && license && license.id) {
+        await paymentModel.linkLicense(refId, license.id);
+      }
+      logger.info('PaymentController', `License created: key=${license.license_key} plan=${planType} expires=${expiresAt.toISOString()}`);
     }
 
     // Catat claim voucher di database jika transaksi ini menggunakan voucher
@@ -752,7 +828,6 @@ class PaymentController {
       }
     }
 
-    logger.info('PaymentController', `License created: key=${licenseKey} plan=${planType} expires=${expiresAt.toISOString()}`);
     return license ? license.id : null;
   }
 
@@ -807,7 +882,7 @@ class PaymentController {
    */
   async createBankOrder(req, res, next) {
     try {
-      const { plan, bank, voucher: voucherCode, extra_hwid_slots: extraHwidRaw } = req.body;
+      const { plan, bank, voucher: voucherCode, extra_hwid_slots: extraHwidRaw, renew } = req.body;
       const userId = req.user?.id;
 
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -819,6 +894,16 @@ class PaymentController {
       const SUPPORTED_BANKS = ['BCAVA', 'MANDIRIVA', 'BNIVA', 'BRIVA', 'PERMATAVA', 'BSIVA', 'CIMBVA', 'DANAMONVA', 'BNCVA'];
       if (!bank || !SUPPORTED_BANKS.includes(bank)) {
         return res.status(400).json({ success: false, error: `Invalid bank channel. Supported: ${SUPPORTED_BANKS.join(', ')}` });
+      }
+
+      // Validate renewal if present
+      let renewLicense = null;
+      if (renew) {
+        try {
+          renewLicense = await this._validateRenewal(renew, plan, userId);
+        } catch (rErr) {
+          return res.status(400).json({ success: false, error: rErr.message });
+        }
       }
 
       // Ambil kurs USD→IDR dari database (diisi owner via halaman currency)
@@ -859,7 +944,7 @@ class PaymentController {
       const expirySeconds = env.TOKOPAY_ORDER_EXPIRY_SECONDS || 86400;
       const expiredTs = Math.floor(Date.now() / 1000) + expirySeconds;
 
-      logger.info('PaymentController', `Creating bank order: plan=${plan} bank=${bank} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode}`);
+      logger.info('PaymentController', `Creating bank order: plan=${plan} bank=${bank} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode} renew=${renew || 'none'}`);
 
       const tokopayResult = await tokopayService.createOrder({
         ref_id: refId,
@@ -899,6 +984,7 @@ class PaymentController {
       // Simpan transaksi ke database
       await paymentModel.create({
         user_id: userId,
+        license_id: renewLicense ? renewLicense.id : null,
         ref_id: refId,
         trx_id: tpData.trx_id,
         payment_method: 'bank',
@@ -941,11 +1027,9 @@ class PaymentController {
 
   /**
    * POST /v1/payment/emoney/create-order
-   * Buat order E-Money baru via Tokopay.
-   */
-  async createEmoneyOrder(req, res, next) {
+   * Buat order E-Money baru via  async createEmoneyOrder(req, res, next) {
     try {
-      const { plan, emoney, voucher: voucherCode, extra_hwid_slots: extraHwidRaw } = req.body;
+      const { plan, emoney, voucher: voucherCode, extra_hwid_slots: extraHwidRaw, renew } = req.body;
       const userId = req.user?.id;
  
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -959,23 +1043,33 @@ class PaymentController {
         return res.status(400).json({ success: false, error: `Invalid e-money channel. Supported: ${SUPPORTED_EMONEY.join(', ')}` });
       }
  
+      // Validate renewal if present
+      let renewLicense = null;
+      if (renew) {
+        try {
+          renewLicense = await this._validateRenewal(renew, plan, userId);
+        } catch (rErr) {
+          return res.status(400).json({ success: false, error: rErr.message });
+        }
+      }
+
       // Ambil kurs USD→IDR dari database (diisi owner via halaman currency)
       const usdCurrency = await currencyModel.getByCode('USD');
       const usdRate = usdCurrency ? Number(usdCurrency.rate_to_idr) : 20000;
  
       const planConfig = PLAN_CONFIG[plan];
       let amountIDR = Math.ceil(planConfig.price_usd * usdRate);
-
+ 
       // Extra HWID slots - only for Pro plan
       let extraHwidSlots = 0;
       if (plan === 'pro' && extraHwidRaw) {
         extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
         amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
       }
-
+ 
       let discountPercent = 0;
       let appliedVoucherCode = null;
-
+ 
       if (voucherCode) {
         try {
           const discountInfo = await this._getDiscountedAmount(voucherCode, plan, userId, amountIDR);
@@ -997,7 +1091,7 @@ class PaymentController {
       const expirySeconds = env.TOKOPAY_ORDER_EXPIRY_SECONDS || 86400;
       const expiredTs = Math.floor(Date.now() / 1000) + expirySeconds;
  
-      logger.info('PaymentController', `Creating emoney order: plan=${plan} emoney=${emoney} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode}`);
+      logger.info('PaymentController', `Creating emoney order: plan=${plan} emoney=${emoney} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode} renew=${renew || 'none'}`);
  
       const tokopayResult = await tokopayService.createOrder({
         ref_id: refId,
@@ -1039,6 +1133,7 @@ class PaymentController {
       // Simpan transaksi ke database
       await paymentModel.create({
         user_id: userId,
+        license_id: renewLicense ? renewLicense.id : null,
         ref_id: refId,
         trx_id: tpData.trx_id,
         payment_method: 'emoney',
@@ -1115,11 +1210,9 @@ class PaymentController {
 
   /**
    * POST /v1/payment/retail/create-order
-   * Buat order Retail (Alfamart / Indomaret) baru via Tokopay.
-   */
-  async createRetailOrder(req, res, next) {
+   * Buat order Retail (Alfamart / Indomaret) ba  async createRetailOrder(req, res, next) {
     try {
-      const { plan, retail, voucher: voucherCode, extra_hwid_slots: extraHwidRaw } = req.body;
+      const { plan, retail, voucher: voucherCode, extra_hwid_slots: extraHwidRaw, renew } = req.body;
       const userId = req.user?.id;
  
       if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -1133,23 +1226,33 @@ class PaymentController {
         return res.status(400).json({ success: false, error: `Invalid retail channel. Supported: ${SUPPORTED_RETAIL.join(', ')}` });
       }
  
+      // Validate renewal if present
+      let renewLicense = null;
+      if (renew) {
+        try {
+          renewLicense = await this._validateRenewal(renew, plan, userId);
+        } catch (rErr) {
+          return res.status(400).json({ success: false, error: rErr.message });
+        }
+      }
+
       // Ambil kurs USD→IDR dari database (diisi owner via halaman currency)
       const usdCurrency = await currencyModel.getByCode('USD');
       const usdRate = usdCurrency ? Number(usdCurrency.rate_to_idr) : 20000;
  
       const planConfig = PLAN_CONFIG[plan];
       let amountIDR = Math.ceil(planConfig.price_usd * usdRate);
-
+ 
       // Extra HWID slots - only for Pro plan
       let extraHwidSlots = 0;
       if (plan === 'pro' && extraHwidRaw) {
         extraHwidSlots = Math.max(0, Math.min(PRO_MAX_HWID - PRO_BASE_HWID, parseInt(extraHwidRaw, 10) || 0));
         amountIDR += Math.ceil(extraHwidSlots * PRO_EXTRA_HWID_PRICE_USD * usdRate);
       }
-
+ 
       let discountPercent = 0;
       let appliedVoucherCode = null;
-
+ 
       if (voucherCode) {
         try {
           const discountInfo = await this._getDiscountedAmount(voucherCode, plan, userId, amountIDR);
@@ -1171,7 +1274,7 @@ class PaymentController {
       const expirySeconds = env.TOKOPAY_ORDER_EXPIRY_SECONDS || 86400;
       const expiredTs = Math.floor(Date.now() / 1000) + expirySeconds;
  
-      logger.info('PaymentController', `Creating retail order: plan=${plan} retail=${retail} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode}`);
+      logger.info('PaymentController', `Creating retail order: plan=${plan} retail=${retail} amount_idr=${amountIDR} usd_rate=${usdRate} expiry=${expirySeconds}s user=${userId} voucher=${appliedVoucherCode} renew=${renew || 'none'}`);
  
       const tokopayResult = await tokopayService.createOrder({
         ref_id: refId,
@@ -1211,6 +1314,7 @@ class PaymentController {
       // Simpan transaksi ke database
       await paymentModel.create({
         user_id: userId,
+        license_id: renewLicense ? renewLicense.id : null,
         ref_id: refId,
         trx_id: tpData.trx_id,
         payment_method: 'retail',

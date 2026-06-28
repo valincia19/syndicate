@@ -21,7 +21,7 @@ import {
   Search,
 } from "lucide-react"
 import { useLanguage } from "@/components/providers/language-provider"
-import { tokenManager } from "@/lib/api"
+import { api, tokenManager } from "@/lib/api"
 import { PaymentLogo } from "@/components/payment/payment-logo"
 
 const BASE_API = process.env.NEXT_PUBLIC_API_URL || ""
@@ -183,6 +183,14 @@ const PAYMENT_METHODS = [
   },
 ]
 
+interface RenewalLicense {
+  id: string
+  license_key: string
+  tier: "free" | "premium" | "pro"
+  status: "unused" | "active" | "revoked" | "expired"
+  expires_at: string | null
+}
+
 function formatIDR(amount: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount)
 }
@@ -193,6 +201,8 @@ function PaymentContent() {
   const { t } = useLanguage()
   // Cast helper: t() has a strict literal union key type; this lets us pass string variables safely
   const tKey = (key: string) => t(key as Parameters<typeof t>[0])
+  const planParam = searchParams.get("plan") || "premium"
+  const plan = ["premium", "pro"].includes(planParam) ? planParam : "premium"
   const [selected, setSelected] = useState<string | null>(null)
   const [selectedBank, setSelectedBank] = useState<string | null>(null)
   const [selectedEmoney, setSelectedEmoney] = useState<string | null>(null)
@@ -216,6 +226,64 @@ function PaymentContent() {
   const PRO_MAX_HWID = 50
   const EXTRA_HWID_PRICE_USD = 0.5
   const [extraHwidSlots, setExtraHwidSlots] = useState(0)
+
+  // License renewal validation
+  const renewParam = searchParams.get("renew")
+  const [renewalLicense, setRenewalLicense] = useState<RenewalLicense | null>(null)
+  const [renewalError, setRenewalError] = useState<string | null>(null)
+  const [checkingRenewal, setCheckingRenewal] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    if (!renewParam) {
+      Promise.resolve().then(() => {
+        if (active) {
+          setRenewalLicense(null)
+          setRenewalError(null)
+        }
+      })
+      return
+    }
+
+    Promise.resolve().then(() => {
+      if (active) {
+        setCheckingRenewal(true)
+        setRenewalError(null)
+      }
+    })
+
+    api.get<{ status: string; data: { license: RenewalLicense } }>(`/v1/licenses/${renewParam}`)
+      .then((res) => {
+        if (!active) return
+        const lic = res.data?.license
+        if (!lic) {
+          setRenewalError("License key not found.")
+          return
+        }
+        // Verify tier matches plan
+        if (lic.tier !== plan) {
+          setRenewalError(`Plan mismatch. This license key is for ${lic.tier.toUpperCase()}, but you requested a renewal for ${plan.toUpperCase()}.`)
+          return
+        }
+        // Verify status
+        if (lic.status === 'revoked') {
+          setRenewalError("This license key has been revoked and cannot be renewed.")
+          return
+        }
+        setRenewalLicense(lic)
+      })
+      .catch((err) => {
+        if (!active) return
+        setRenewalError(err.message || "Failed to validate renewal license.")
+      })
+      .finally(() => {
+        if (active) setCheckingRenewal(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [renewParam, plan])
 
   // Auto-detect user's local currency via IP geolocation and browser fallback
   const [detectedCurrency, setDetectedCurrency] = useState<string>('IDR')
@@ -293,9 +361,6 @@ function PaymentContent() {
     setRedeemError(null)
   }
 
-  const planParam = searchParams.get("plan") || "premium"
-  const plan = ["premium", "pro"].includes(planParam) ? planParam : "premium"
-
   // Fetch available crypto coins from backend based on plan and applied voucher
   useEffect(() => {
     const controller = new AbortController()
@@ -357,7 +422,7 @@ function PaymentContent() {
         const res = await fetch(`${BASE_API}/v1/payment/crypto/create-order`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ plan, coin: selectedCrypto, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined }),
+          body: JSON.stringify({ plan, coin: selectedCrypto, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined, renew: renewParam || undefined }),
         })
 
         const data = await res.json()
@@ -381,7 +446,7 @@ function PaymentContent() {
         const res = await fetch(`${BASE_API}/v1/payment/qris/create-order`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ plan, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined }),
+          body: JSON.stringify({ plan, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined, renew: renewParam || undefined }),
         })
 
         const data = await res.json()
@@ -406,7 +471,7 @@ function PaymentContent() {
         const res = await fetch(`${BASE_API}/v1/payment/bank/create-order`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ plan, bank: selectedBank, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined }),
+          body: JSON.stringify({ plan, bank: selectedBank, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined, renew: renewParam || undefined }),
         })
 
         const data = await res.json()
@@ -431,7 +496,7 @@ function PaymentContent() {
         const res = await fetch(`${BASE_API}/v1/payment/emoney/create-order`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ plan, emoney: selectedEmoney, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined }),
+          body: JSON.stringify({ plan, emoney: selectedEmoney, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined, renew: renewParam || undefined }),
         })
 
         const data = await res.json()
@@ -456,7 +521,7 @@ function PaymentContent() {
         const res = await fetch(`${BASE_API}/v1/payment/retail/create-order`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ plan, retail: selectedRetail, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined }),
+          body: JSON.stringify({ plan, retail: selectedRetail, voucher: appliedVoucher ? appliedVoucher.code : undefined, extra_hwid_slots: plan === 'pro' ? extraHwidSlots : undefined, renew: renewParam || undefined }),
         })
 
         const data = await res.json()
@@ -544,8 +609,51 @@ function PaymentContent() {
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid gap-3 lg:grid-cols-3 items-start">
+      {renewParam && checkingRenewal && (
+        <div className="flex flex-col items-center justify-center p-12 border border-border bg-card rounded-lg text-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <p className="text-[11px] font-mono text-muted-foreground">Validating renewal license key...</p>
+        </div>
+      )}
+
+      {renewParam && renewalError && (
+        <div className="flex flex-col items-center justify-center p-8 border border-red-500/20 bg-red-500/5 rounded-lg text-center gap-4">
+          <div className="p-3 bg-red-500/10 text-red-500 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-red-600 dark:text-red-500 font-mono uppercase">Invalid Renewal Request</h3>
+            <p className="text-xs text-muted-foreground max-w-md font-mono">{renewalError}</p>
+          </div>
+          <button
+            onClick={() => router.push('/portal/license')}
+            className="px-4 py-2 bg-primary text-primary-foreground text-[11px] font-mono rounded-lg hover:opacity-90 transition-all font-bold cursor-pointer"
+          >
+            Back to Licenses
+          </button>
+        </div>
+      )}
+
+      {(!checkingRenewal && !renewalError) && (
+        <>
+          {renewParam && renewalLicense && (
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-amber-500">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5 animate-pulse">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider font-mono">License Renewal Mode</p>
+                <p className="text-[9px] font-mono leading-relaxed text-muted-foreground">
+                  You are renewing license key <span className="font-bold text-foreground font-mono">{renewalLicense.license_key}</span>. The remaining duration of your current license will be preserved, and the new duration will be appended.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Main Grid */}
+          <div className="grid gap-3 lg:grid-cols-3 items-start">
         {/* Left: Payment Methods - mobile: tampil kedua, desktop: kiri */}
         <div className="order-last lg:order-first lg:col-span-2 flex flex-col gap-3">
           {/* Step Indicator */}
@@ -1096,6 +1204,8 @@ function PaymentContent() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }
