@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**VINZHUB** (branded as "VALINC SYNDICATE") is a Roblox scripting platform with a landing page, user portal, and REST API. This is a **multi-project monorepo** with two independent projects (`frontend/` and `backend/`), each with its own `node_modules`, package manager, and development server.
+**VALINC SYNDICATE** is a Roblox scripting platform with a landing page, user portal, and REST API. This is a **multi-project monorepo** with two independent projects (`frontend/` and `backend/`), each with its own `node_modules`, package manager, and development server.
 
 ## Repository Structure
 
@@ -93,7 +93,7 @@ backend/
 +-- src/
     +-- config/
     |   +-- env.js              # Environment validation (JWT, DB, Redis, R2, Discord, Rate Limit)
-    |   +-- database.js         # PostgreSQL connection pool (pg, TLS 1.2+, schema "vinzhub")
+    |   +-- database.js         # PostgreSQL connection pool (pg, TLS 1.2+, schema "valinc_syndicate")
     |   +-- redis.js            # Upstash Redis REST client (graceful in-memory fallback)
     |   +-- websocket.js        # WSS server with JWT auth, BOLA protection, heartbeat, rate limit
     |   +-- logger.js           # Structured logger with levels, color output (dev) / JSON (prod)
@@ -175,7 +175,7 @@ JWT_SECRET=<min 32 chars>
 JWT_EXPIRES_IN=7d
 
 # PostgreSQL (not TiDB/MySQL — uses pg driver)
-DB_HOST=localhost, DB_PORT=5432, DB_NAME=vinzhub
+DB_HOST=localhost, DB_PORT=5432, DB_NAME=valinc_syndicate
 DB_USER=<user>, DB_PASSWORD=<pass>
 DB_SSL=true, DB_CONNECTION_LIMIT=20
 
@@ -193,7 +193,7 @@ R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_U
 RATE_LIMIT_WINDOW_MS=900000, RATE_LIMIT_MAX_REQUESTS=100
 ```
 
-**PostgreSQL Schema**: All tables created under the `vinzhub` schema. An `update_updated_at_column()` trigger function is auto-created on startup. Table creation is done via model `createTable()` methods in `index.js` startup sequence.
+**PostgreSQL Schema**: All tables created under the `valinc_syndicate` schema. An `update_updated_at_column()` trigger function is auto-created on startup. Table creation is done via model `createTable()` methods in `index.js` startup sequence.
 
 **WebSocket Details**:
 - Path: `/ws`

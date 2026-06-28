@@ -11,7 +11,7 @@ types.setTypeParser(1114, (val) => {
 
 let pool = null;
 
-const SCHEMA = 'vinzhub';
+const SCHEMA = 'valinc_syndicate';
 
 const createPool = () => {
   const sslConfig = env.database.ssl

@@ -21,7 +21,7 @@ docker-compose ps
 Output:
 ```
 NAME                STATUS              PORTS
-vinzhub-postgres    Up (healthy)        0.0.0.0:5432->5432/tcp
+valinc-postgres     Up (healthy)        0.0.0.0:5432->5432/tcp
 ```
 
 ### 3. Setup Backend .env
@@ -35,9 +35,9 @@ NODE_ENV=development
 # Database (connect ke Docker PostgreSQL)
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=vinzhub
-DB_USER=vinzhub_user
-DB_PASSWORD=vinzhub_password_change_in_production
+DB_NAME=valinc_syndicate
+DB_USER=valinc_user
+DB_PASSWORD=valinc_password_change_in_production
 DB_SSL=false
 DB_CONNECTION_LIMIT=20
 
@@ -112,7 +112,7 @@ npm run dev
 | `docker-compose logs -f` | Lihat logs PostgreSQL |
 | `docker-compose restart` | Restart PostgreSQL |
 | `docker-compose ps` | Status container |
-| `docker-compose exec postgres psql -U vinzhub_user -d vinzhub` | Masuk PostgreSQL shell |
+| `docker-compose exec postgres psql -U valinc_user -d valinc_syndicate` | Masuk PostgreSQL shell |
 
 ---
 
@@ -121,13 +121,13 @@ npm run dev
 ### Backup Database
 
 ```bash
-docker-compose exec postgres pg_dump -U vinzhub_user vinzhub > backup.sql
+docker-compose exec postgres pg_dump -U valinc_user valinc_syndicate > backup.sql
 ```
 
 ### Restore Database
 
 ```bash
-cat backup.sql | docker-compose exec -T postgres psql -U vinzhub_user vinzhub
+cat backup.sql | docker-compose exec -T postgres psql -U valinc_user valinc_syndicate
 ```
 
 ### Reset Database (HATI-HATI!)
@@ -140,17 +140,17 @@ docker-compose up -d
 ### Akses PostgreSQL Shell
 
 ```bash
-docker-compose exec postgres psql -U vinzhub_user -d vinzhub
+docker-compose exec postgres psql -U valinc_user -d valinc_syndicate
 ```
 
 Dalam psql:
 
 ```sql
 -- Lihat semua tabel
-\dt vinzhub.*
+\dt valinc_syndicate.*
 
 -- Query users
-SELECT * FROM vinzhub.users LIMIT 10;
+SELECT * FROM valinc_syndicate.users LIMIT 10;
 
 -- Cek schema
 \dn

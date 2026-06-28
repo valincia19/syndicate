@@ -367,8 +367,8 @@ Run ESLint rule:
 
 ### Positive Patterns ✅
 1. **Modular Architecture** - Clean Routes → Controller → Service → Model separation
-2. **Connection Pooling** - Proper mysql2 pool with keepalive
-3. **TLS Enforcement** - TiDB SSL configured correctly
+2. **Connection Pooling** - Proper pg pool with keepalive
+3. **TLS Enforcement** - PostgreSQL SSL configured correctly
 4. **Input Validation** - Zod schemas on frontend, regex validation on backend
 5. **Graceful Shutdown** - SIGTERM/SIGINT handlers properly implemented
 

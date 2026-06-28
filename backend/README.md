@@ -148,7 +148,7 @@ JWT_SECRET=your-s...n
 # Database (PostgreSQL)
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=vinzhub
+DB_NAME=valinc_syndicate
 DB_USER=postgres
 DB_PASSWORD=***
 DB_SSL=false

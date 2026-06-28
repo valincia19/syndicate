@@ -160,7 +160,7 @@ export default function SecurityPage() {
                       <span className="text-emerald-500 font-bold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> VERIFIED</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-foreground">[2/4] TiDB Cloud MySQL Encrypted Pool</span>
+                      <span className="text-foreground">[2/4] PostgreSQL Encrypted Pool</span>
                       <span className="text-emerald-500 font-bold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> ENCRYPTED</span>
                     </div>
                     <div className="flex items-center justify-between">

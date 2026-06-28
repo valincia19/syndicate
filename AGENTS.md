@@ -4,7 +4,7 @@ This file provides guidance to Qoder (qoder.com) when working with code in this 
 
 ## Repository Structure
 
-This is a **multi-project monorepo** for "VINZHUB" (branded as "VALINC SYNDICATE") — a Roblox scripting platform with a landing page, user portal, and REST API.
+This is a **multi-project monorepo** for "VALINC SYNDICATE" — a Roblox scripting platform with a landing page, user portal, and REST API.
 
 There are **two independent projects** with separate `node_modules`:
 
@@ -59,7 +59,7 @@ Uses the **App Router** with these route groups:
 
 ```
 backend/src/
-├── config/          # env.js, database.js (TiDB Cloud MySQL), redis.js (Upstash)
+├── config/          # env.js, database.js (PostgreSQL), redis.js (Upstash)
 ├── middleware/       # auth, cors, security headers, rate limiter, error handler
 └── modules/
     └── auth/        # Each module: routes → controller → service → model
@@ -67,7 +67,7 @@ backend/src/
 
 **Key details:**
 - Entry point: `backend/index.js` — connects DB, runs migrations, connects Redis, starts server
-- Database: **TiDB Cloud** via `mysql2/promise` with TLS 1.2+ connection pooling
+- Database: **PostgreSQL** via `pg` with TLS 1.2+ connection pooling
 - Redis: **Upstash** (REST-based) with in-memory fallback
 - Auth: JWT tokens + bcrypt password hashing
 - Rate limiting: In-memory per-IP tracking (100 req/15min default)
