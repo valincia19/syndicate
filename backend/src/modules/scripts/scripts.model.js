@@ -249,11 +249,31 @@ class ScriptModel {
 
   async deleteFolder(id) {
     const pool = getPool();
-    await pool.query('UPDATE scripts SET folder_id = NULL WHERE folder_id = $1', [id]);
-    const folder = await pool.query('SELECT parent_id FROM script_folders WHERE id = $1', [id]);
-    const newParent = folder.rows.length ? folder.rows[0].parent_id : null;
-    await pool.query('UPDATE script_folders SET parent_id = $1 WHERE parent_id = $2', [newParent, id]);
-    await pool.query('DELETE FROM script_folders WHERE id = $1', [id]);
+    // Use recursive CTE to find target folder and all nested subfolder IDs
+    const query = `
+      WITH RECURSIVE folder_tree AS (
+        SELECT id FROM script_folders WHERE id = $1
+        UNION ALL
+        SELECT sf.id FROM script_folders sf
+        INNER JOIN folder_tree ft ON sf.parent_id = ft.id
+      )
+      SELECT id FROM folder_tree;
+    `;
+    const res = await pool.query(query, [id]);
+    const folderIds = res.rows.map(r => r.id);
+
+    if (folderIds.length > 0) {
+      // Fetch scripts inside these folders to return file_paths for R2 storage cleanup
+      const scriptsRes = await pool.query('SELECT id, file_path FROM scripts WHERE folder_id = ANY($1::varchar[])', [folderIds]);
+
+      // 1. Delete all scripts inside target folder and all subfolders
+      await pool.query('DELETE FROM scripts WHERE folder_id = ANY($1::varchar[])', [folderIds]);
+      // 2. Delete target folder (ON DELETE CASCADE deletes child subfolders)
+      await pool.query('DELETE FROM script_folders WHERE id = $1', [id]);
+
+      return scriptsRes.rows;
+    }
+    return [];
   }
 }
 

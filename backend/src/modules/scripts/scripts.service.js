@@ -192,7 +192,28 @@ class ScriptService {
   async deleteFolder(id) {
     const folder = await ScriptModel.findFolderById(id);
     if (!folder) throw new AppError('Folder not found', 404);
-    await ScriptModel.deleteFolder(id);
+
+    const deletedScripts = await ScriptModel.deleteFolder(id);
+
+    // Clean up files from R2 storage for all deleted scripts inside folder & subfolders
+    try {
+      const s3 = this.getS3Client();
+      const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
+      for (const script of deletedScripts) {
+        if (script.file_path) {
+          await s3.send(new DeleteObjectCommand({
+            Bucket: env.r2.bucketName,
+            Key: script.file_path,
+          })).catch(err => {
+            logger.warn('ScriptService', 'Failed to delete file from R2 during folder deletion', { scriptId: script.id, error: err.message });
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn('ScriptService', 'R2 cleanup error during folder deletion', { error: err.message });
+    }
+
+    await cacheUtility.delPrefix('cache:scripts:');
   }
 
   async updateScript(id, data) {
