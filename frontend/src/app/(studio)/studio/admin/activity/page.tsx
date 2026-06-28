@@ -501,8 +501,8 @@ export default function AdminActivityPage() {
                       <div className="flex items-center gap-2.5 min-w-0">
                         {/* User Avatar or Initials Badge */}
                         <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
-                          {log.user_avatar ? (
-                            <Image src={getAvatarUrl(log.user_avatar, log.user_email)} alt={log.user_name || ''} width={28} height={28} className="w-full h-full object-cover" />
+                          {getAvatarUrl(log.user_avatar, log.user_email) ? (
+                            <Image src={getAvatarUrl(log.user_avatar, log.user_email) || ""} alt={log.user_name || ''} width={28} height={28} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[10px] font-bold font-mono text-primary">{userInitials}</span>
                           )}

@@ -83,11 +83,11 @@ export function PortalHeader() {
             onClick={() => setShowUserMenu(!showUserMenu)}
           >
             <div className="h-6 w-6 rounded-full bg-muted border border-border/60 overflow-hidden flex items-center justify-center font-bold text-[10px] text-muted-foreground">
-              {user?.avatar && user.avatar !== "null" && user.avatar !== "undefined" && !avatarError ? (
+              {getAvatarUrl(user?.avatar, user?.email) && !avatarError ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img 
-                  src={getAvatarUrl(user.avatar, user.email)} 
-                  alt={user.username} 
+                  src={getAvatarUrl(user?.avatar, user?.email) || ""} 
+                  alt={user?.username} 
                   className="h-full w-full object-cover" 
                   onError={() => setAvatarError(true)}
                 />

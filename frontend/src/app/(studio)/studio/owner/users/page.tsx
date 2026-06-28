@@ -560,9 +560,9 @@ export default function OwnerUsersPage() {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold bg-muted border border-border shrink-0 select-none">
-                            {u.avatar ? (
+                            {getAvatarUrl(u.avatar, u.email) ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={getAvatarUrl(u.avatar, u.email)} alt="" className="w-full h-full rounded-full object-cover" />
+                              <img src={getAvatarUrl(u.avatar, u.email) || ""} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (
                               u.name.charAt(0).toUpperCase()
                             )}
@@ -727,9 +727,9 @@ export default function OwnerUsersPage() {
             {/* User info card */}
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/20 border border-border/50">
               <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-muted border border-border shrink-0">
-                {editTarget.avatar ? (
+                {getAvatarUrl(editTarget.avatar, editTarget.email) ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={getAvatarUrl(editTarget.avatar, editTarget.email)} alt="" className="w-full h-full rounded-full object-cover" />
+                  <img src={getAvatarUrl(editTarget.avatar, editTarget.email) || ""} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
                   editTarget.name.charAt(0).toUpperCase()
                 )}

@@ -131,9 +131,9 @@ export function PortalProfileMenu() {
       <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0 overflow-hidden">
           <div className="h-9 w-9 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 rounded-full bg-muted border border-border/60 overflow-hidden flex items-center justify-center font-bold text-muted-foreground text-sm shrink-0 select-none">
-            {user?.avatar && user.avatar !== "null" && user.avatar !== "undefined" && !avatarError ? (
+            {getAvatarUrl(user?.avatar, user?.email) && !avatarError ? (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={getAvatarUrl(user.avatar, user.email)} alt={user.username} className="h-full w-full object-cover" onError={() => setAvatarError(true)} />
+              <img src={getAvatarUrl(user?.avatar, user?.email) || ""} alt={user?.username} className="h-full w-full object-cover" onError={() => setAvatarError(true)} />
             ) : (
               user?.initials ?? "-"
             )}

@@ -262,9 +262,9 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold bg-muted border border-border shrink-0">
-                          {u.avatar ? (
+                          {getAvatarUrl(u.avatar, u.email) ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={getAvatarUrl(u.avatar, u.email)} alt="" className="w-full h-full rounded-full object-cover" />
+                            <img src={getAvatarUrl(u.avatar, u.email) || ""} alt="" className="w-full h-full rounded-full object-cover" />
                           ) : (
                             u.name.charAt(0).toUpperCase()
                           )}

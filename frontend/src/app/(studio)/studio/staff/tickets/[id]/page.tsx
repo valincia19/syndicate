@@ -398,10 +398,10 @@ export default function StaffTicketDetailPage() {
                     ? 'bg-primary/10 border-primary/20 text-primary'
                     : 'bg-muted border-border text-muted-foreground'
                 }`}>
-                  {msg.sender_avatar && msg.sender_avatar !== 'null' && msg.sender_avatar !== 'undefined' ? (
+                  {getAvatarUrl(msg.sender_avatar, msg.sender_username) ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={getAvatarUrl(msg.sender_avatar, msg.sender_username)}
+                      src={getAvatarUrl(msg.sender_avatar, msg.sender_username) || ""}
                       alt={msg.sender_username || 'User'}
                       className="w-full h-full object-cover"
                     />
