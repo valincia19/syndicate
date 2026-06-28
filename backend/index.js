@@ -69,6 +69,14 @@ app.set('trust proxy', 1);
 // ============================================================
 // GLOBAL MIDDLEWARE STACK
 // ============================================================
+// Silently swallow legacy script heartbeat requests to keep logs clean
+app.use((req, res, next) => {
+  if (req.path === '/heartbeat' || (req.originalUrl && req.originalUrl.includes('heartbeat'))) {
+    return res.status(200).send();
+  }
+  next();
+});
+
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -484,11 +492,6 @@ app.get('/v1/bypass/settings', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
-
-// Compatibility endpoint for legacy Roblox client scripts pinging heartbeat
-app.all(['/heartbeat', '/v1/heartbeat', '/v1/licenses/heartbeat'], (req, res) => {
-  return res.status(200).json({ status: 'success', valid: true, message: 'Heartbeat acknowledged' });
 });
 
 app.use('/v1/auth', authRoutes);
