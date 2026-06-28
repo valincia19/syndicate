@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { useLanguage } from "@/components/providers/language-provider"
@@ -21,7 +22,9 @@ export default function LoginPage() {
 
   return (
     <AuthLayout title="VALINC SYNDICATE" description={t("loginDesc")}>
-      <LoginForm />
+      <Suspense fallback={<div className="text-sm font-mono text-center text-muted-foreground animate-pulse py-8">Loading login...</div>}>
+        <LoginForm />
+      </Suspense>
     </AuthLayout>
   )
 }

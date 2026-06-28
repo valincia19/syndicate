@@ -5,11 +5,16 @@ FROM base AS deps
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
+RUN npm install lightningcss-linux-x64-musl @next/swc-linux-x64-musl @tailwindcss/oxide-linux-x64-musl
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 

@@ -16,16 +16,22 @@
     "@paper-design/shaders-react": "^0.0.76",
     "@radix-ui/react-accordion": "^1.2.14",
     "@types/react-window": "^1.8.8",
+    "@types/trusted-types": "^2.0.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "dompurify": "^3.4.11",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^1.21.0",
+    "marked": "^18.0.5",
+    "monaco-editor": "^0.55.1",
     "next": "16.2.9",
+    "picomatch": "^4.0.4",
     "react": "19.2.4",
     "react-day-picker": "^10.0.1",
     "react-dom": "19.2.4",
+    "react-hook-form": "^7.80.0",
     "react-window": "^2.2.7",
     "recharts": "^3.8.0",
     "shadcn": "^4.11.0",
@@ -45,5 +51,9 @@
     "knip": "^6.17.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@next/swc-linux-x64-musl": "^16.2.9",
+    "lightningcss-linux-x64-musl": "^1.32.0"
   }
 }

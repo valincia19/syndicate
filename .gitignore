@@ -26,6 +26,11 @@ Thumbs.db
 /.obsidian/
 /.vscode/
 /.claude/
+/.mcp.json
+/CLAUDE.md
+/AGENTS.md
+/implementation_plan.md
+/walkthrough.md
 
 # Database dumps
 *.sql

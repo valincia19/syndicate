@@ -19,6 +19,63 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Local Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: valinc-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Express Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: valinc-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - ALLOWED_ORIGINS=http://localhost:3000
+      - JWT_SECRET=285ba4ebe63b282c83800c17f8c6adada635dc7bac917da6eee4d652d74dcd3869b1a7fea0d6f529c1496c35bd9b5000391b5c8725fc631f5fbb22bba3f1ec95
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=valinc_user
+      - DB_PASSWORD=valinc_password_change_in_production
+      - DB_NAME=valinc_syndicate
+      - DB_SSL=false
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - FRONTEND_URL=http://localhost:3000
+      - BACKEND_URL=http://localhost:5000
+    restart: unless-stopped
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:5000
+    container_name: valinc-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local

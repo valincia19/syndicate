@@ -51,10 +51,11 @@ const env = {
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 20,
   },
 
-  // Upstash Redis
+  // Redis (Local/Regular)
   redis: {
-    url: process.env.UPSTASH_REDIS_REST_URL || '',
-    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASSWORD || '',
   },
 
   // Rate Limiting
@@ -134,7 +135,7 @@ const validateEnv = () => {
     logger.warn('Env', 'Database not fully configured');
   }
 
-  if (!env.redis.url || !env.redis.token) {
+  if (!env.redis.host) {
     logger.warn('Env', 'Redis not configured. Using in-memory fallback.');
   }
 
