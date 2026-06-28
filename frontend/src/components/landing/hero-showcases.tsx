@@ -426,7 +426,8 @@ const Hero2ThreatAlertFeed = memo(function Hero2ThreatAlertFeed({ isActive = tru
           "Heuristic Scan Bypassed",
         ]
         const types = ["BYPASS", "SPOOF", "PROTECT", "SECURITY"]
-        const nextId = (prev[0]?.id || 0) + 1
+        const maxId = Math.max(...prev.map(p => (typeof p.id === 'number' ? p.id : 0)), 0)
+        const nextId = maxId + 1
         const newAlert = {
           id: nextId,
           type: types[Math.floor(Math.random() * types.length)],
@@ -448,8 +449,8 @@ const Hero2ThreatAlertFeed = memo(function Hero2ThreatAlertFeed({ isActive = tru
 
   return (
     <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar select-none font-sans">
-      {alerts.map((a) => (
-        <div key={a.id} className="p-3 rounded-xl border border-zinc-800 bg-zinc-900/20 flex gap-3 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/40">
+      {alerts.map((a, idx) => (
+        <div key={`threat-alert-${a.id}-${idx}`} className="p-3 rounded-xl border border-zinc-800 bg-zinc-900/20 flex gap-3 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/40">
           <div className="flex-shrink-0 size-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mt-0.5">
             <Bell size={13} className="text-emerald-400 animate-pulse" />
           </div>
