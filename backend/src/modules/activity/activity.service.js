@@ -10,6 +10,16 @@ class ActivityService {
     const total = await ActivityModel.countByUserId(userId);
     return { logs, total };
   }
+
+  async getAll(filters = {}, limit = 50, offset = 0) {
+    const logs = await ActivityModel.findAll(filters, limit, offset);
+    const total = await ActivityModel.countAll(filters);
+    return { logs, total };
+  }
+
+  async cleanLogs(range) {
+    return ActivityModel.clean(range);
+  }
 }
 
 module.exports = new ActivityService();

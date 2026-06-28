@@ -135,6 +135,22 @@ class ActivityModel {
     await pool.query('DELETE FROM user_activities WHERE id = $1', [id]);
     return true;
   }
+
+  async clean(range) {
+    const pool = getPool();
+    let query = '';
+    if (range === '7d') {
+      query = "DELETE FROM user_activities WHERE created_at < NOW() - INTERVAL '7 days'";
+    } else if (range === '30d') {
+      query = "DELETE FROM user_activities WHERE created_at < NOW() - INTERVAL '30 days'";
+    } else if (range === 'all') {
+      query = "DELETE FROM user_activities";
+    } else {
+      throw new Error('Invalid range specified for clean action');
+    }
+    const res = await pool.query(query);
+    return res.rowCount || 0;
+  }
 }
 
 module.exports = new ActivityModel();
