@@ -6,8 +6,8 @@ import {
   TrendingUp, Play, Orbit, Radio, Crosshair,
   Target, ScanLine, Satellite, Radar,
   Shield, Hexagon, Siren, CircleDot, Diamond, Square,
-  ShieldAlert, ShieldCheck, Activity, BarChart3, Settings,
-  MessageCircle, Link2, Users, Clock, Key, Server, UserCheck, Globe, ChevronRight
+  ShieldAlert, ShieldCheck, Activity, Settings, Bell,
+  MessageCircle, Link2, Users, Key, Server, UserCheck, Globe
 } from "lucide-react"
 
 // ─── Shared Theme Constants ───
@@ -58,7 +58,7 @@ function ScaledContainer({ children }: { children: React.ReactNode }) {
 }
 
 // ============================================================================
-// 1. HERO 1: NEXT-GEN EXECUTION PREVIEW
+// 1. HERO 1: NEXT-GEN EXECUTION PREVIEW (100% Exact from design-assets-hub-v2)
 // ============================================================================
 const hero1OrbitStats = [
   { label: "Inject", value: "0.42ms", icon: Zap, color: ACCENT },
@@ -205,7 +205,6 @@ export function Hero1Showcase() {
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6 flex-shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
@@ -225,9 +224,7 @@ export function Hero1Showcase() {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="flex-1 flex items-stretch gap-6 min-h-0">
-            {/* Radar Panel */}
             <div className="flex-shrink-0 w-[55%] h-full rounded-2xl border border-zinc-800 bg-zinc-900/40 flex items-center justify-center relative p-8">
               <div className="absolute top-0 left-0 right-0 h-10 border-b border-zinc-800/40 bg-zinc-900/20 rounded-t-2xl px-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -252,7 +249,6 @@ export function Hero1Showcase() {
               })}
             </div>
 
-            {/* Terminal & Pipeline */}
             <div className="flex-1 flex flex-col gap-5 h-full min-w-0">
               <div className="flex-1 rounded-2xl p-5 flex flex-col min-h-0 border border-zinc-800 bg-zinc-900/40">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0">
@@ -294,7 +290,6 @@ export function Hero1Showcase() {
             </div>
           </div>
 
-          {/* Footer Stats Bar */}
           <div className="mt-6 flex border-t border-zinc-800 justify-between items-center pt-4 flex-shrink-0 font-mono">
             <div className="flex gap-1">
               {[
@@ -323,7 +318,7 @@ export function Hero1Showcase() {
 }
 
 // ============================================================================
-// 2. HERO 2: ANTI-BAN PROTECTION SHOWCASE
+// 2. HERO 2: ANTI-BAN PROTECTION SHOWCASE (100% Exact Copy of AntiBanProtection.tsx)
 // ============================================================================
 const hero2Nodes = [
   { id: "poly", name: "Polymorphic Engine", x: 40, y: 80, icon: Hexagon, status: "ACTIVE", detail: "Entropy: 99.8%", color: GREEN },
@@ -336,82 +331,227 @@ const hero2Nodes = [
   { id: "integrity", name: "Integrity Checker", x: 752, y: 620, icon: ShieldAlert, status: "SECURE", detail: "Byfron status: Bypassed", color: GREEN },
 ]
 
+const hero2NetworkFlows = [
+  { d: "M 160 180 L 160 350", color: GREEN, dur: "1.8s", delay: "0s" },
+  { d: "M 160 180 L 160 350", color: GREEN, dur: "1.8s", delay: "0.9s" },
+  { d: "M 160 450 L 160 620", color: GOLD, dur: "2.0s", delay: "0.3s" },
+  { d: "M 160 450 L 160 620", color: GOLD, dur: "2.0s", delay: "1.3s" },
+  { d: "M 516 180 L 516 320", color: AMBER, dur: "1.5s", delay: "0.1s" },
+  { d: "M 516 480 L 516 620", color: AMBER, dur: "1.6s", delay: "0.7s" },
+  { d: "M 872 180 L 872 350", color: GOLD, dur: "1.7s", delay: "0.2s" },
+  { d: "M 872 180 L 872 350", color: GOLD, dur: "1.7s", delay: "1.0s" },
+  { d: "M 872 450 L 872 620", color: GREEN, dur: "2.2s", delay: "0.5s" },
+  { d: "M 280 130 L 396 130", color: GREEN, dur: "1.6s", delay: "0.4s" },
+  { d: "M 636 130 L 752 130", color: GOLD, dur: "1.9s", delay: "0.8s" },
+  { d: "M 280 670 L 396 670", color: GREEN, dur: "1.8s", delay: "0.2s" },
+  { d: "M 636 670 L 752 670", color: AMBER, dur: "2.0s", delay: "0.6s" },
+  { d: "M 280 160 C 340 160, 320 340, 386 340", color: GREEN, dur: "2.3s", delay: "0.1s" },
+  { d: "M 280 160 C 340 160, 320 340, 386 340", color: GREEN, dur: "2.3s", delay: "1.2s" },
+  { d: "M 280 400 L 386 400", color: GOLD, dur: "1.3s", delay: "0.3s" },
+  { d: "M 280 640 C 340 640, 320 460, 386 460", color: GREEN, dur: "2.5s", delay: "0.5s" },
+  { d: "M 752 160 C 692 160, 712 340, 646 340", color: GOLD, dur: "2.2s", delay: "0.2s" },
+  { d: "M 752 160 C 692 160, 712 340, 646 340", color: GOLD, dur: "2.2s", delay: "1.3s" },
+  { d: "M 752 400 L 646 400", color: AMBER, dur: "1.4s", delay: "0.6s" },
+  { d: "M 752 640 C 692 640, 712 460, 646 460", color: GREEN, dur: "2.4s", delay: "0.4s" },
+  { d: "M 280 370 C 320 320, 350 200, 396 160", color: GREEN, dur: "2.6s", delay: "0.1s" },
+  { d: "M 396 160 C 350 200, 320 320, 280 370", color: GREEN, dur: "2.6s", delay: "1.4s" },
+  { d: "M 636 160 C 680 200, 710 320, 752 370", color: GOLD, dur: "2.4s", delay: "0.3s" },
+  { d: "M 752 430 C 710 480, 680 600, 636 640", color: AMBER, dur: "2.7s", delay: "0.7s" },
+  { d: "M 396 640 C 350 600, 320 480, 280 430", color: GOLD, dur: "2.8s", delay: "0.9s" },
+]
+
+function Hero2ThreatAlertFeed() {
+  const [alerts, setAlerts] = useState([
+    { id: 1, type: "BYPASS", title: "Hyperion MemScan Blocked", desc: "Blocked memory signature query at region 0x7FFA", time: "Just Now", status: "BLOCKED" },
+    { id: 2, type: "SPOOF", title: "HWID UUID Spoofed", desc: "Returned synthetic physical BIOS descriptor on client check", time: "2m ago", status: "SPOOFED" },
+    { id: 3, type: "PROTECT", title: "Stack Frame Redirected", desc: "Masked Level 7 Roblox API call stack return pointers", time: "4m ago", status: "ACTIVE" },
+    { id: 4, type: "SECURITY", title: "Anti-Cheat Heartbeat Bypassed", desc: "Telemetry packet modified and dispatched with 0ms lag", time: "7m ago", status: "SECURE" },
+  ])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAlerts((prev) => {
+        const descriptions = [
+          "Intercepted crash dump write sequence to prevent diagnostics report.",
+          "Redirected virtual thread context to sandbox page allocation.",
+          "HWID motherboard disk serial call hijacked successfully.",
+          "Byfron heuristics integrity scan bypassed in module initialization.",
+        ]
+        const titles = [
+          "Crash Reporter Intercepted",
+          "Thread Context Redirected",
+          "Disk Serial Spoofed",
+          "Heuristic Scan Bypassed",
+        ]
+        const types = ["BYPASS", "SPOOF", "PROTECT", "SECURITY"]
+        const nextId = prev.length + 1
+        const newAlert = {
+          id: nextId,
+          type: types[Math.floor(Math.random() * types.length)],
+          title: titles[Math.floor(Math.random() * titles.length)],
+          desc: descriptions[Math.floor(Math.random() * descriptions.length)],
+          time: "Just Now",
+          status: "SECURE"
+        }
+        const updated = prev.map(a => ({
+          ...a,
+          time: a.time === "Just Now" ? "1m ago" : a.time.includes("m ago") ? `${parseInt(a.time) + 1}m ago` : a.time
+        }))
+        return [newAlert, ...updated.slice(0, 3)]
+      })
+    }, 4500)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+      {alerts.map((a) => (
+        <div key={a.id} className="p-3 rounded-xl border border-zinc-800 bg-zinc-900/20 flex gap-3 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/40">
+          <div className="flex-shrink-0 size-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mt-0.5">
+            <Bell size={13} className="text-emerald-400 animate-pulse" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold" style={{ color: GOLD }}>{a.type}</span>
+              <span className="text-[8px] font-mono text-zinc-500">{a.time}</span>
+            </div>
+            <h4 className="text-[11px] font-semibold text-zinc-300 mt-0.5 truncate">{a.title}</h4>
+            <p className="text-[9px] text-zinc-500 mt-0.5 leading-relaxed">{a.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function Hero2Showcase() {
   return (
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 shrink-0">
+          <div className="flex items-center justify-between mb-6 flex-shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
                 <Shield size={20} style={{ color: GOLD }} />
               </div>
               <div>
-                <h1 className="text-2xl font-normal tracking-tight text-zinc-100 uppercase font-mono">Anti-Ban Protection System</h1>
-                <p className="text-xs text-zinc-500">Advanced anti-cheat bypasses and undetected execution methods keeping your account completely safe.</p>
+                <h1 className="text-2xl font-normal tracking-tight text-zinc-100 font-mono uppercase">Anti-Ban Protection System</h1>
+                <p className="text-xs text-zinc-500">Advanced anti-cheat bypasses and undetected execution methods keeping your accounts secure at all times.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-900/80 border border-zinc-800 text-emerald-400 font-mono">
-              <ShieldCheck size={14} />
-              BYFRON / HYPERION BYPASSED
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              LIVE SECURE
             </div>
           </div>
 
-          {/* Main Grid */}
-          <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
-            {/* Left Network Graph */}
-            <div className="col-span-8 rounded-2xl border border-zinc-800 bg-zinc-900/40 relative p-6 overflow-hidden flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/40 shrink-0 font-mono">
-                <div className="flex items-center gap-2">
-                  <Activity size={13} style={{ color: GOLD }} />
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Node Security Architecture</span>
+          {/* Main Body */}
+          <div className="flex-1 flex gap-6 min-h-0 items-stretch">
+            {/* Left Column */}
+            <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0">
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex flex-col items-center text-center justify-center">
+                <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5 self-start font-mono">
+                  <ShieldCheck size={12} style={{ color: GOLD }} />
+                  Bypass Integrity Gauge
                 </div>
-                <span className="text-[9px] text-zinc-500">NODES: 8/8 SECURE</span>
-              </div>
-              <div className="grid grid-cols-3 gap-4 flex-1 items-center">
-                {hero2Nodes.map((node) => (
-                  <div key={node.id} className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-950/60 flex flex-col gap-2 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <node.icon size={16} style={{ color: node.color }} />
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800" style={{ color: node.color }}>{node.status}</span>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-zinc-200">{node.name}</div>
-                      <div className="text-[10px] font-mono text-zinc-500 mt-0.5">{node.detail}</div>
-                    </div>
+                <div className="relative flex items-center justify-center w-36 h-36 mt-2">
+                  <svg className="absolute w-full h-full transform -rotate-90">
+                    <circle cx="72" cy="72" r="60" stroke="#18181b" strokeWidth="6" fill="transparent" />
+                    <circle cx="72" cy="72" r="60" stroke={GOLD} strokeWidth="6" fill="transparent" strokeDasharray={376.8} strokeDashoffset={0.1} strokeLinecap="round" />
+                  </svg>
+                  <div className="text-center font-mono">
+                    <span className="text-2xl font-bold tracking-tight text-zinc-100">99.98%</span>
+                    <p className="text-[8px] text-zinc-500 uppercase tracking-wider mt-0.5">UNDETECTED STATUS</p>
                   </div>
-                ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex flex-col min-h-0 flex-1">
+                <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-4 flex-shrink-0 flex items-center gap-1.5 font-mono">
+                  <ShieldAlert size={12} style={{ color: GOLD }} />
+                  Live Threat Intercepts
+                </div>
+                <Hero2ThreatAlertFeed />
               </div>
             </div>
 
-            {/* Right Threat & Telemetry Feed */}
-            <div className="col-span-4 flex flex-col gap-5 h-full min-w-0">
-              <div className="flex-1 rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex flex-col">
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0 font-mono">
-                  <div className="flex items-center gap-2">
-                    <Siren size={13} style={{ color: AMBER }} />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Live Threat Monitor</span>
-                  </div>
-                  <span className="text-[9px] text-emerald-400">STATUS: PROTECTED</span>
+            {/* Center Column: Thread-Connected Node Flow Canvas */}
+            <div className="flex-1 relative min-h-0 bg-zinc-950/40 rounded-2xl border border-zinc-800 p-4 overflow-hidden">
+              <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                <defs>
+                  <filter id="glow-gold-h2" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <filter id="glow-green-h2" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <filter id="glow-amber-h2" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+
+                {hero2NetworkFlows.map((flow, idx) => (
+                  <path key={`bg-${idx}`} d={flow.d} stroke={flow.color} strokeWidth="1.5" fill="none" opacity="0.1" />
+                ))}
+
+                {hero2NetworkFlows.map((flow, idx) => {
+                  const filterId = flow.color === GREEN ? "url(#glow-green-h2)" : flow.color === GOLD ? "url(#glow-gold-h2)" : "url(#glow-amber-h2)"
+                  return (
+                    <circle key={`sig-${idx}`} r="3.5" fill={flow.color} filter={filterId}>
+                      <animateMotion dur={flow.dur} begin={flow.delay} repeatCount="indefinite" path={flow.d} />
+                    </circle>
+                  )
+                })}
+              </svg>
+
+              {/* Central Decoy VM Shield Node */}
+              <div className="absolute top-[320px] left-[386px] w-[260px] h-[160px] rounded-2xl p-4 flex flex-col items-center justify-center border-2 border-[oklch(0.78_0.14_65)] bg-zinc-950 z-10 shadow-2xl">
+                <div className="relative flex size-12 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-2">
+                  <span className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-60" />
+                  <ShieldCheck size={24} className="text-emerald-400" />
                 </div>
-                <div className="space-y-3 flex-1 overflow-hidden font-mono text-[11px]">
-                  {[
-                    { title: "Hyperion MemScan Blocked", desc: "Blocked memory signature query region 0x7FFA", time: "Just Now" },
-                    { title: "HWID UUID Spoofed", desc: "Returned synthetic physical BIOS descriptor", time: "2m ago" },
-                    { title: "Stack Frame Redirected", desc: "Masked Level 7 Roblox API call stack return pointers", time: "4m ago" },
-                    { title: "Heartbeat Bypassed", desc: "Telemetry packet modified with 0ms delay", time: "7m ago" },
-                  ].map((item, i) => (
-                    <div key={i} className="p-3 rounded-lg border border-zinc-800/60 bg-zinc-950/40">
-                      <div className="flex items-center justify-between text-zinc-200 font-bold mb-1">
-                        <span>{item.title}</span>
-                        <span className="text-[9px] text-zinc-500">{item.time}</span>
-                      </div>
-                      <p className="text-[10px] text-zinc-400">{item.desc}</p>
-                    </div>
-                  ))}
-                </div>
+                <div className="text-[12px] font-bold text-zinc-100 tracking-wider font-mono">VALINC DECOY VM</div>
+                <div className="text-[9px] font-mono text-zinc-500 mt-0.5">VIRTUAL SECURITY SHIELD</div>
+                <div className="text-[9px] font-mono text-emerald-400/80 font-semibold mt-1">100% BYPASSED</div>
               </div>
+
+              {/* Surrounding Nodes */}
+              {hero2Nodes.map((node) => {
+                const Icon = node.icon
+                return (
+                  <div
+                    key={node.id}
+                    className="absolute w-[240px] h-[100px] rounded-xl p-3 border border-zinc-800 bg-zinc-900/85 z-10 flex flex-col justify-between"
+                    style={{ left: `${node.x}px`, top: `${node.y}px` }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded bg-zinc-950 border border-zinc-800">
+                          <Icon size={12} style={{ color: node.color }} />
+                        </div>
+                        <span className="text-[11px] font-bold text-zinc-200 truncate w-[140px] block font-mono">{node.name}</span>
+                      </div>
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: node.color }} />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: node.color }} />
+                      </span>
+                    </div>
+                    <div className="mt-2 text-[9px] font-mono text-zinc-500 flex justify-between">
+                      <span>Status:</span>
+                      <span style={{ color: node.color }} className="font-semibold">{node.status}</span>
+                    </div>
+                    <div className="text-[8.5px] font-mono text-zinc-400 truncate">{node.detail}</div>
+                  </div>
+                )
+              })}
             </div>
           </div>
 
@@ -431,14 +571,13 @@ export function Hero2Showcase() {
 }
 
 // ============================================================================
-// 3. HERO 3: DISCORD WHITELIST SHOWCASE
+// 3. HERO 3: DISCORD WHITELIST SHOWCASE (100% Exact Copy of DiscordWhitelist.tsx)
 // ============================================================================
 export function Hero3Showcase() {
   return (
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
@@ -455,9 +594,7 @@ export function Hero3Showcase() {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
-            {/* Left Section */}
             <div className="col-span-7 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/40 shrink-0 font-mono">
                 <div className="flex items-center gap-2">
@@ -476,14 +613,13 @@ export function Hero3Showcase() {
                 ].map((item, i) => (
                   <div key={i} className="p-5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 flex flex-col gap-2">
                     <item.icon size={20} style={{ color: GOLD }} />
-                    <div className="text-sm font-bold text-zinc-200">{item.title}</div>
+                    <div className="text-sm font-bold text-zinc-200 font-mono">{item.title}</div>
                     <div className="text-xs text-zinc-400">{item.desc}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right Section Commit Log */}
             <div className="col-span-5 flex flex-col gap-5 h-full min-w-0">
               <div className="flex-1 rounded-2xl p-6 border border-zinc-800 bg-zinc-900/40 flex flex-col">
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/40 shrink-0 font-mono">
@@ -512,7 +648,6 @@ export function Hero3Showcase() {
             </div>
           </div>
 
-          {/* Footer Bar */}
           <div className="mt-6 flex border-t border-zinc-800 justify-between items-center pt-4 flex-shrink-0 font-mono text-xs">
             <div className="flex items-center gap-6 text-zinc-400">
               <div>WHITELISTED USERS: <strong className="text-zinc-200">24,890+</strong></div>
