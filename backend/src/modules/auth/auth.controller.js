@@ -13,10 +13,33 @@ function getAuthCookieOptions(env) {
   return {
     httpOnly: true,           // Prevent XSS - not readable by JS (intentional)
     secure: isProduction,     // HTTPS only in prod, HTTP ok in dev
-    sameSite: isProduction ? 'strict' : 'lax', // 'lax' allows cross-port on localhost
+    sameSite: 'lax',          // 'lax' allows cross-subdomain top-level navigation / redirects
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
     path: '/',
   };
+}
+
+// Helper to resolve the correct frontend URL dynamically from environment or request headers
+function getFrontendUrl(req, env) {
+  if (env.frontendUrl && !env.frontendUrl.includes('localhost')) {
+    return env.frontendUrl.replace(/\/+$/, '');
+  }
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  if (host.includes('api.')) {
+    return `${proto}://${host.replace('api.', '')}`;
+  }
+  return env.frontendUrl || `${proto}://${host}`;
+}
+
+// Helper to resolve the correct backend URL dynamically
+function getBackendUrl(req, env) {
+  if (env.backendUrl && !env.backendUrl.includes('localhost')) {
+    return env.backendUrl.replace(/\/+$/, '');
+  }
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  return env.backendUrl || `${proto}://${host}`;
 }
 
 class AuthController {
@@ -104,7 +127,11 @@ class AuthController {
       const { getRedis } = require('../../config/redis');
       
       const clientId = env.discord.clientId;
-      const redirectUri = encodeURIComponent(env.discord.redirectUri);
+      let targetRedirect = env.discord.redirectUri;
+      if (!targetRedirect || targetRedirect.includes('localhost')) {
+        targetRedirect = `${getBackendUrl(req, env)}/v1/auth/discord/callback`;
+      }
+      const redirectUri = encodeURIComponent(targetRedirect);
       
       const state = crypto.randomBytes(32).toString('hex');
       
@@ -131,13 +158,14 @@ class AuthController {
    * GET /v1/auth/discord/callback
    */
   async discordCallback(req, res, next) {
+    const env = require('../../config/env');
+    const targetFrontend = getFrontendUrl(req, env);
     try {
       const { code, state } = req.query;
-      const env = require('../../config/env');
       const { getRedis } = require('../../config/redis');
       
       if (!code) {
-        return res.redirect(`${env.frontendUrl}/login?error=discord_code_missing`);
+        return res.redirect(`${targetFrontend}/login?error=discord_code_missing`);
       }
       
       const redis = getRedis();
@@ -165,11 +193,10 @@ class AuthController {
       
       res.cookie('auth_token', token, getAuthCookieOptions(env));
       
-      res.redirect(`${env.frontendUrl}/callback`);
+      res.redirect(`${targetFrontend}/callback`);
     } catch (error) {
-      const env = require('../../config/env');
       logger.error('Auth:Discord', 'OAuth callback error', { error: error.message });
-      res.redirect(`${env.frontendUrl}/login?error=${encodeURIComponent(error.message || 'discord_auth_failed')}`);
+      res.redirect(`${targetFrontend}/login?error=${encodeURIComponent(error.message || 'discord_auth_failed')}`);
     }
   }
 

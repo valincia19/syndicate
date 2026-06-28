@@ -61,7 +61,7 @@ class TokopayService {
       product_code: 'VALINC-PLAN',
       name: opts.plan_label || 'VALINC SYNDICATE Plan',
       price: amount,
-      product_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/plans`,
+      product_url: `${env.frontendUrl}/portal/plans`,
       image_url: '',
     };
 

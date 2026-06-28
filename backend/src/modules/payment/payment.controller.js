@@ -124,7 +124,7 @@ class PaymentController {
         customer_name: userName,
         customer_email: userEmail,
         customer_phone: req.user?.phone || '08123456789',
-        redirect_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/payment/qris?orderId=${refId}`,
+        redirect_url: `${env.frontendUrl}/portal/payment/qris?orderId=${refId}`,
         expired_ts: expiredTs,
         plan_label: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
         items: [
@@ -132,7 +132,7 @@ class PaymentController {
             product_code: `VSYN-${plan.toUpperCase()}`,
             name: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
             price: amountIDR,
-            product_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/plans`,
+            product_url: `${env.frontendUrl}/portal/plans`,
             image_url: '',
           },
         ],
@@ -248,9 +248,9 @@ class PaymentController {
 
       const refId = `VSYN-${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
       
-      const successUrl = `${env.frontendUrl || 'http://localhost:3000'}/portal/plans?payment=success&orderId=${refId}`;
-      const cancelUrl = `${env.frontendUrl || 'http://localhost:3000'}/portal/payment?plan=${plan}`;
-      const ipnCallbackUrl = `${env.backendUrl || 'http://localhost:5000'}/v1/payment/callback/nowpayments`;
+      const successUrl = `${env.frontendUrl}/portal/plans?payment=success&orderId=${refId}`;
+      const cancelUrl = `${env.frontendUrl}/portal/payment?plan=${plan}`;
+      const ipnCallbackUrl = `${env.backendUrl}/v1/payment/callback/nowpayments`;
 
       logger.info('PaymentController', `Creating NOWPayments crypto order: plan=${plan} coin=${coin} price_usd=${priceUSD} amount_idr=${amountIDR} user=${userId} voucher=${appliedVoucherCode}`);
 
@@ -868,7 +868,7 @@ class PaymentController {
         customer_name: userName,
         customer_email: userEmail,
         customer_phone: req.user?.phone || '08123456789',
-        redirect_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/payment/bank?orderId=${refId}`,
+        redirect_url: `${env.frontendUrl}/portal/payment/bank?orderId=${refId}`,
         expired_ts: expiredTs,
         plan_label: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
         items: [
@@ -876,7 +876,7 @@ class PaymentController {
             product_code: `VSYN-${plan.toUpperCase()}`,
             name: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
             price: amountIDR,
-            product_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/plans`,
+            product_url: `${env.frontendUrl}/portal/plans`,
             image_url: '',
           },
         ],
@@ -1006,7 +1006,7 @@ class PaymentController {
         customer_name: userName,
         customer_email: userEmail,
         customer_phone: req.user?.phone || '08123456789',
-        redirect_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/payment/emoney?orderId=${refId}`,
+        redirect_url: `${env.frontendUrl}/portal/payment/emoney?orderId=${refId}`,
         expired_ts: expiredTs,
         plan_label: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
         items: [
@@ -1014,7 +1014,7 @@ class PaymentController {
             product_code: `VSYN-${plan.toUpperCase()}`,
             name: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
             price: amountIDR,
-            product_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/plans`,
+            product_url: `${env.frontendUrl}/portal/plans`,
             image_url: '',
           },
         ],
@@ -1180,7 +1180,7 @@ class PaymentController {
         customer_name: userName,
         customer_email: userEmail,
         customer_phone: req.user?.phone || '08123456789',
-        redirect_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/payment/retail?orderId=${refId}`,
+        redirect_url: `${env.frontendUrl}/portal/payment/retail?orderId=${refId}`,
         expired_ts: expiredTs,
         plan_label: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
         items: [
@@ -1188,7 +1188,7 @@ class PaymentController {
             product_code: `VSYN-${plan.toUpperCase()}`,
             name: `VALINC SYNDICATE ${plan.toUpperCase()} Plan`,
             price: amountIDR,
-            product_url: `${env.frontendUrl || 'http://localhost:3000'}/portal/plans`,
+            product_url: `${env.frontendUrl}/portal/plans`,
             image_url: '',
           },
         ],
