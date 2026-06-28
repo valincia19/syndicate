@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useCallback, useEffect, useState } from "react"
 import { useLanguage } from "@/components/providers/language-provider"
-import { ExecutionPreviewCard } from "@/components/landing/execution-preview-card"
+import { Hero1Showcase, Hero2Showcase, Hero3Showcase } from "@/components/landing/hero-showcases"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -98,33 +98,20 @@ export function FeatureCards() {
                   className={`absolute inset-0 transition-all duration-500 ease-in-out ${
                     activeCard === 0
                       ? "blur-0 scale-100 opacity-100"
-                      : "scale-95 opacity-0 blur-sm"
+                      : "scale-95 opacity-0 blur-sm pointer-events-none"
                   }`}
                 >
-                  <Image
-                    src="/templates/ai-hero-black.webp"
-                    alt="Bento Grid Dashboard"
-                    width={1920}
-                    height={1080}
-                    priority
-                    className="aspect-video h-full w-full object-cover"
-                  />
+                  <Hero1Showcase />
                 </div>
 
                 <div
                   className={`absolute inset-0 transition-all duration-500 ease-in-out ${
                     activeCard === 1
                       ? "blur-0 scale-100 opacity-100"
-                      : "scale-95 opacity-0 blur-sm"
+                      : "scale-95 opacity-0 blur-sm pointer-events-none"
                   }`}
                 >
-                  <Image
-                    src="/templates/ai-icons.jpg"
-                    alt="Bento Grid Dashboard"
-                    width={1920}
-                    height={1080}
-                    className="aspect-video h-full w-full object-cover"
-                  />
+                  <Hero2Showcase />
                 </div>
 
                 <div
@@ -134,7 +121,7 @@ export function FeatureCards() {
                       : "scale-95 opacity-0 blur-sm pointer-events-none"
                   }`}
                 >
-                  <ExecutionPreviewCard />
+                  <Hero3Showcase />
                 </div>
               </div>
             </div>
