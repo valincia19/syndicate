@@ -190,6 +190,67 @@ class LicenseService {
 
     return license;
   }
+
+  async claimLicense(key, userId) {
+    if (!key || typeof key !== 'string') {
+      throw new AppError('License key is required', 400);
+    }
+
+    const db = require('../../config/database');
+    const pool = db.getPool();
+
+    // Find the license
+    const trimmed = key.trim();
+    const result = await pool.query('SELECT * FROM licenses WHERE license_key = $1', [trimmed]);
+    const license = result.rows[0];
+
+    if (!license) {
+      throw new AppError('Invalid license key', 404);
+    }
+
+    if (license.user_id) {
+      throw new AppError('This license key has already been claimed by another user', 400);
+    }
+
+    if (license.status !== 'unused') {
+      throw new AppError(`This license key cannot be claimed (Status: ${license.status})`, 400);
+    }
+
+    // Determine new expires_at if it's set
+    let expiresAt = license.expires_at;
+    if (expiresAt) {
+      const durationMs = new Date(expiresAt).getTime() - new Date(license.created_at).getTime();
+      if (durationMs > 0) {
+        expiresAt = new Date(Date.now() + durationMs).toISOString();
+      }
+    }
+
+    // Update license atomically
+    const updateRes = await pool.query(
+      `UPDATE licenses 
+       SET user_id = $1, status = 'active', expires_at = $2, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $3 AND user_id IS NULL AND status = 'unused' 
+       RETURNING *`,
+      [userId, expiresAt, license.id]
+    );
+
+    const updatedLicense = updateRes.rows[0];
+    if (!updatedLicense) {
+      throw new AppError('Failed to claim license, please try again', 400);
+    }
+
+    // Log activity
+    const activityService = require('../activity/activity.service');
+    await activityService.log(userId, 'claim_license', {
+      license_key: updatedLicense.license_key,
+      tier: updatedLicense.tier
+    });
+
+    // Clear caches
+    await cacheUtility.del(`cache:user_licenses:${userId}`);
+    
+    return updatedLicense;
+  }
 }
 
 module.exports = new LicenseService();

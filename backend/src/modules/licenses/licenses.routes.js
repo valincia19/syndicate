@@ -16,6 +16,7 @@ router.use(authenticateToken, requireEmailVerified);
 
 router.get('/my', ctrl.myLicenses.bind(ctrl));
 router.get('/lookup', authorizeRoles('owner', 'admin', 'staff'), validate(lookupQuerySchema, 'query'), ctrl.lookup.bind(ctrl));
+router.post('/claim', ctrl.claim.bind(ctrl));
 router.get('/:id', validate(licenseParamsSchema, 'params'), ctrl.getForUser.bind(ctrl));
 
 router.use(authorizeRoles('admin', 'owner'));

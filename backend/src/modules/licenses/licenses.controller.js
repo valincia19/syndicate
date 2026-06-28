@@ -152,6 +152,18 @@ class LicenseController {
       });
     } catch (err) { next(err); }
   }
+
+  async claim(req, res, next) {
+    try {
+      const { key } = req.body;
+      const license = await licenseService.claimLicense(key, req.user.id);
+      res.status(200).json({
+        status: 'success',
+        message: 'License claimed successfully',
+        data: { license }
+      });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new LicenseController();

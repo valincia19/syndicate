@@ -125,8 +125,19 @@ export default function PortalLicensePage() {
         const errObj = voucherErr as { statusCode?: number; message?: string }
         // If it was a 404 error (e.g. invalid voucher code), fall back to standard redeem
         if (errObj.statusCode === 404) {
-          await api.post("/v1/redeem/redeem", { code: code.trim() })
-          success = true
+          try {
+            await api.post("/v1/redeem/redeem", { code: code.trim() })
+            success = true
+          } catch (redeemErr: unknown) {
+            const redeemErrObj = redeemErr as { statusCode?: number; message?: string }
+            if (redeemErrObj.statusCode === 404) {
+              // Fall back to direct license key claiming
+              await api.post("/v1/licenses/claim", { key: code.trim() })
+              success = true
+            } else {
+              throw redeemErrObj
+            }
+          }
         } else {
           // Re-throw other errors (e.g. expired, max claims, etc.)
           throw errObj
