@@ -594,7 +594,7 @@ const startServer = async () => {
       console.log('🌍 Environment: ' + env.nodeEnv);
       console.log('🔐 CORS:        ' + env.allowedOrigins.join(', '));
       console.log('🗄️  Database:    PostgreSQL (pg pool, limit ' + env.database.connectionLimit + ')');
-      console.log('🔴 Redis:       ' + (env.redis.url ? 'Upstash REST' : 'Memory fallback'));
+      console.log('🔴 Redis:       ' + (require('./src/config/redis').getRedis() ? 'Connected' : 'Memory fallback'));
       console.log('🔌 WebSocket:   ws://localhost:' + env.port + '/ws');
       console.log('');
       console.log('Available Routes:');
