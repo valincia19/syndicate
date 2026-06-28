@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, memo } from "react"
 import { useLanguage } from "@/components/providers/language-provider"
 import { Hero1Showcase, Hero2Showcase, Hero3Showcase } from "@/components/landing/hero-showcases"
 
@@ -18,7 +18,7 @@ interface FeatureCardProps {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Data                                                               */
+/*  Data & Constants                                                   */
 /* ------------------------------------------------------------------ */
 
 const ROTATE_INTERVAL_MS = 5_000
@@ -49,6 +49,7 @@ export function FeatureCards() {
   const cardCount = FEATURES.length
   const [activeCard, setActiveCard] = useState(0)
   const [progress, setProgress] = useState(0)
+
   // Handle progress bar increment
   useEffect(() => {
     const interval = setInterval(() => {
@@ -61,7 +62,6 @@ export function FeatureCards() {
   // Handle active card switching when progress reaches 100%
   useEffect(() => {
     if (progress >= 100) {
-      // Reset progress and switch card in a microtask to avoid cascading
       queueMicrotask(() => {
         setProgress(0)
         setActiveCard((prev) => (prev + 1) % cardCount)
@@ -69,13 +69,10 @@ export function FeatureCards() {
     }
   }, [progress, cardCount])
 
-  const handleCardClick = useCallback(
-    (index: number) => {
-      setActiveCard(index)
-      setProgress(0)
-    },
-    [],
-  )
+  const handleCardClick = useCallback((index: number) => {
+    setActiveCard(index)
+    setProgress(0)
+  }, [])
 
   return (
     <div id="features">
@@ -101,7 +98,7 @@ export function FeatureCards() {
                       : "scale-95 opacity-0 blur-sm pointer-events-none"
                   }`}
                 >
-                  <Hero1Showcase />
+                  <Hero1Showcase isActive={activeCard === 0} />
                 </div>
 
                 <div
@@ -111,7 +108,7 @@ export function FeatureCards() {
                       : "scale-95 opacity-0 blur-sm pointer-events-none"
                   }`}
                 >
-                  <Hero2Showcase />
+                  <Hero2Showcase isActive={activeCard === 1} />
                 </div>
 
                 <div
@@ -121,24 +118,23 @@ export function FeatureCards() {
                       : "scale-95 opacity-0 blur-sm pointer-events-none"
                   }`}
                 >
-                  <Hero3Showcase />
+                  <Hero3Showcase isActive={activeCard === 2} />
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
       <div className="mt-10 flex items-start justify-center self-stretch border-y">
-        {/* Left diagonal-line decoration */}
+        {/* Left diagonal-line decoration (Optimized via CSS repeating linear gradient) */}
         <div className="relative w-4 self-stretch overflow-hidden sm:w-6 md:w-8 lg:w-12">
-          <div className="absolute -top-30 -left-4 flex w-40 flex-col items-start justify-start">
-            {Array.from({ length: 50 }).map((_, i) => (
-              <div
-                key={i}
-                className="outline-primary/40 h-4 origin-top-left -rotate-45 self-stretch outline-[0.5px] outline-offset-[-0.25px]"
-              />
-            ))}
-          </div>
+          <div 
+            className="absolute inset-0 opacity-40" 
+            style={{ 
+              backgroundImage: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.15) 0px, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 8px)" 
+            }} 
+          />
         </div>
 
         {/* Feature cards */}
@@ -155,16 +151,14 @@ export function FeatureCards() {
           ))}
         </div>
 
-        {/* Right diagonal-line decoration */}
+        {/* Right diagonal-line decoration (Optimized via CSS repeating linear gradient) */}
         <div className="relative w-4 self-stretch overflow-hidden sm:w-6 md:w-8 lg:w-12">
-          <div className="absolute -top-30 -left-4 flex w-40 flex-col items-start justify-start">
-            {Array.from({ length: 50 }).map((_, i) => (
-              <div
-                key={i}
-                className="outline-primary/40 h-4 origin-top-left -rotate-45 self-stretch outline-[0.5px] outline-offset-[-0.25px]"
-              />
-            ))}
-          </div>
+          <div 
+            className="absolute inset-0 opacity-40" 
+            style={{ 
+              backgroundImage: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.15) 0px, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 8px)" 
+            }} 
+          />
         </div>
       </div>
     </div>
@@ -172,10 +166,10 @@ export function FeatureCards() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  FeatureCard                                                        */
+/*  Sub-Components                                                     */
 /* ------------------------------------------------------------------ */
 
-function FeatureCard({
+const FeatureCard = memo(function FeatureCard({
   title,
   description,
   isActive,
@@ -183,29 +177,29 @@ function FeatureCard({
   onClick,
 }: FeatureCardProps) {
   return (
-    <div
-      className={`relative flex w-full cursor-pointer flex-col items-start justify-start gap-2 self-stretch overflow-hidden px-6 py-5 md:flex-1 ${
-        isActive ? "bg-code border" : "border-r-0 border-l-0 md:border"
-      }`}
+    <button
+      type="button"
       onClick={onClick}
+      className={`group relative flex flex-1 flex-col items-start justify-start p-6 text-left transition-colors duration-200 cursor-pointer ${
+        isActive
+          ? "bg-muted/50 text-foreground"
+          : "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
+      }`}
     >
-      {/* Progress bar */}
-      {isActive && (
-        <div className="absolute top-0 left-0 h-1 w-full">
+      {/* Active progress bar */}
+      <div className="absolute top-0 right-0 left-0 h-0.5 bg-muted">
+        {isActive && (
           <div
-            className="bg-primary h-full transition-all duration-100 ease-linear"
-            style={{ width: `${progress}%` }}
+            className="h-full bg-primary transition-all duration-100 ease-linear"
+            style={{ width: `${Math.min(progress, 100)}%` }}
           />
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Text */}
-      <div className="flex flex-col justify-center self-stretch text-sm font-semibold md:text-lg">
-        {title}
-      </div>
-      <div className="text-muted-foreground self-stretch text-sm">
+      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         {description}
-      </div>
-    </div>
+      </p>
+    </button>
   )
-}
+})

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, memo } from "react"
 import {
   Gauge, Zap, Cpu, Timer, CheckCircle2,
   TrendingUp, Play, Orbit, Radio, Crosshair,
@@ -17,8 +17,8 @@ const DIM = "oklch(0.55 0 0)"
 const GREEN = "oklch(0.72 0.19 150)"
 const AMBER = "oklch(0.79 0.15 85)"
 
-// ─── Scaled Wrapper Component (Dynamic ResizeObserver for 100% responsive accuracy) ───
-function ScaledContainer({ children }: { children: React.ReactNode }) {
+// ─── Scaled Wrapper Component (Optimized with requestAnimationFrame throttling) ───
+const ScaledContainer = memo(function ScaledContainer({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.4)
 
@@ -26,14 +26,19 @@ function ScaledContainer({ children }: { children: React.ReactNode }) {
     const el = containerRef.current
     if (!el) return
 
+    let animationFrameId: number
+
     const updateScale = () => {
-      const w = el.clientWidth
-      const h = el.clientHeight
-      if (w > 0 && h > 0) {
-        const scaleX = w / 1920
-        const scaleY = h / 1080
-        setScale(Math.min(scaleX, scaleY))
-      }
+      animationFrameId = requestAnimationFrame(() => {
+        const w = el.clientWidth
+        const h = el.clientHeight
+        if (w > 0 && h > 0) {
+          const scaleX = w / 1920
+          const scaleY = h / 1080
+          const calculatedScale = Math.min(scaleX, scaleY)
+          setScale((prevScale) => (Math.abs(prevScale - calculatedScale) > 0.001 ? calculatedScale : prevScale))
+        }
+      })
     }
 
     updateScale()
@@ -43,7 +48,10 @@ function ScaledContainer({ children }: { children: React.ReactNode }) {
     })
     observer.observe(el)
 
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(animationFrameId)
+    }
   }, [])
 
   return (
@@ -54,6 +62,7 @@ function ScaledContainer({ children }: { children: React.ReactNode }) {
           transform: `scale(${scale})`,
           width: "1920px",
           height: "1080px",
+          willChange: "transform",
         }}
       >
         {children}
@@ -77,10 +86,10 @@ function ScaledContainer({ children }: { children: React.ReactNode }) {
       `}</style>
     </div>
   )
-}
+})
 
 // ============================================================================
-// 1. HERO 1: NEXT-GEN EXECUTION PREVIEW (100% Exact Replica of NextGenExecutionPreview.tsx)
+// 1. HERO 1: NEXT-GEN EXECUTION PREVIEW
 // ============================================================================
 const hero1OrbitStats = [
   { label: "Inject", value: "0.42ms", icon: Zap, color: ACCENT },
@@ -116,16 +125,18 @@ const hero1LogEntries = [
   "[EXEC] Script execution completed successfully - 0.42ms total.",
 ]
 
-function Hero1RadarSweep() {
+const Hero1RadarSweep = memo(function Hero1RadarSweep({ isActive = true }: { isActive?: boolean }) {
   const [angle, setAngle] = useState(0)
   const [blips, setBlips] = useState<{ x: number; y: number; size: number; color: string }[]>([])
 
   useEffect(() => {
+    if (!isActive) return
     const interval = setInterval(() => setAngle((a) => (a + 1.5) % 360), 30)
     return () => clearInterval(interval)
-  }, [])
+  }, [isActive])
 
   useEffect(() => {
+    if (!isActive) return
     const timer = setInterval(() => {
       if (Math.random() > 0.4) {
         const radius = 10 + Math.random() * 26
@@ -142,7 +153,7 @@ function Hero1RadarSweep() {
       }
     }, 700)
     return () => clearInterval(timer)
-  }, [])
+  }, [isActive])
 
   return (
     <div className="relative w-full h-full flex items-center justify-center border border-zinc-800/40 rounded-xl bg-zinc-950/40 p-6 overflow-hidden select-none">
@@ -192,9 +203,9 @@ function Hero1RadarSweep() {
       </div>
     </div>
   )
-}
+})
 
-function Hero1TerminalStream({ step }: { step: number }) {
+const Hero1TerminalStream = memo(function Hero1TerminalStream({ step }: { step: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (containerRef.current) containerRef.current.scrollTop = containerRef.current.scrollHeight
@@ -212,14 +223,15 @@ function Hero1TerminalStream({ step }: { step: number }) {
       {step < hero1LogEntries.length && <span className="animate-pulse" style={{ color: GOLD }}>█</span>}
     </div>
   )
-}
+})
 
-export function Hero1Showcase() {
+export const Hero1Showcase = memo(function Hero1Showcase({ isActive = true }: { isActive?: boolean }) {
   const [step, setStep] = useState(0)
   useEffect(() => {
+    if (!isActive) return
     const interval = setInterval(() => setStep((s) => (s < hero1LogEntries.length ? s + 1 : 0)), 450)
     return () => clearInterval(interval)
-  }, [])
+  }, [isActive])
 
   const activeStageIndex = step < 2 ? -1 : step < 6 ? 0 : step < 9 ? 1 : step < 13 ? 2 : step < 15 ? 3 : 4
 
@@ -255,7 +267,7 @@ export function Hero1Showcase() {
                 </div>
                 <span className="text-[9px] font-mono text-zinc-500">SYSTEM: ACTIVE</span>
               </div>
-              <div className="relative w-[65%] aspect-square"><Hero1RadarSweep /></div>
+              <div className="relative w-[65%] aspect-square"><Hero1RadarSweep isActive={isActive} /></div>
               {hero1OrbitStats.map((s, i) => {
                 const a = (i * 90 + 45) * (Math.PI / 180)
                 const r = 38
@@ -296,11 +308,11 @@ export function Hero1Showcase() {
                 <div className="flex items-center">
                   {hero1Stages.map((s, idx) => {
                     const isCompleted = idx < activeStageIndex
-                    const isActive = idx === activeStageIndex
-                    const color = (isCompleted || isActive) ? GOLD : DIM
+                    const isActiveStage = idx === activeStageIndex
+                    const color = (isCompleted || isActiveStage) ? GOLD : DIM
                     return (
                       <div key={idx} className="flex-1 flex flex-col items-center relative transition-all duration-300" style={{ opacity: idx > activeStageIndex ? 0.35 : 1 }}>
-                        <div className={`relative z-10 w-[24px] h-[24px] rounded-full flex items-center justify-center ${isActive ? "animate-pulse" : ""}`} style={{ background: isActive ? `${GOLD}22` : "transparent", border: `1.5px solid ${color}` }}>
+                        <div className={`relative z-10 w-[24px] h-[24px] rounded-full flex items-center justify-center ${isActiveStage ? "animate-pulse" : ""}`} style={{ background: isActiveStage ? `${GOLD}22` : "transparent", border: `1.5px solid ${color}` }}>
                           <s.icon size={11} style={{ color }} />
                         </div>
                         <span className="text-[9px] font-mono mt-1.5" style={{ color }}>{s.label}</span>
@@ -337,10 +349,10 @@ export function Hero1Showcase() {
       </div>
     </ScaledContainer>
   )
-}
+})
 
 // ============================================================================
-// 2. HERO 2: ANTI-BAN PROTECTION SHOWCASE (100% Exact Replica of AntiBanProtection.tsx)
+// 2. HERO 2: ANTI-BAN PROTECTION SHOWCASE
 // ============================================================================
 const hero2Nodes = [
   { id: "poly", name: "Polymorphic Engine", x: 40, y: 80, icon: Hexagon, status: "ACTIVE", detail: "Entropy: 99.8%", color: GREEN },
@@ -389,7 +401,7 @@ const hero2NetworkFlows = [
   { d: "M 396 640 C 350 600, 320 480, 280 430", color: GOLD, dur: "2.8s", delay: "0.9s" },
 ]
 
-function Hero2ThreatAlertFeed() {
+const Hero2ThreatAlertFeed = memo(function Hero2ThreatAlertFeed({ isActive = true }: { isActive?: boolean }) {
   const [alerts, setAlerts] = useState([
     { id: 1, type: "BYPASS", title: "Hyperion MemScan Blocked", desc: "Blocked memory signature query at region 0x7FFA", time: "Just Now", status: "BLOCKED" },
     { id: 2, type: "SPOOF", title: "HWID UUID Spoofed", desc: "Returned synthetic physical BIOS descriptor on client check", time: "2m ago", status: "SPOOFED" },
@@ -398,6 +410,7 @@ function Hero2ThreatAlertFeed() {
   ])
 
   useEffect(() => {
+    if (!isActive) return
     const interval = setInterval(() => {
       setAlerts((prev) => {
         const descriptions = [
@@ -431,7 +444,7 @@ function Hero2ThreatAlertFeed() {
     }, 4500)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [isActive])
 
   return (
     <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar select-none font-sans">
@@ -452,14 +465,13 @@ function Hero2ThreatAlertFeed() {
       ))}
     </div>
   )
-}
+})
 
-export function Hero2Showcase() {
+export const Hero2Showcase = memo(function Hero2Showcase({ isActive = true }: { isActive?: boolean }) {
   return (
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6 flex-shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
@@ -479,9 +491,7 @@ export function Hero2Showcase() {
             </div>
           </div>
 
-          {/* Main Body */}
           <div className="flex-1 flex gap-6 min-h-0 items-stretch">
-            {/* Left Column: Security Overview & Live Threat Feeds */}
             <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0">
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex flex-col items-center text-center justify-center">
                 <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5 self-start font-mono">
@@ -505,11 +515,10 @@ export function Hero2Showcase() {
                   <ShieldAlert size={12} style={{ color: GOLD }} />
                   Live Threat Intercepts
                 </div>
-                <Hero2ThreatAlertFeed />
+                <Hero2ThreatAlertFeed isActive={isActive} />
               </div>
             </div>
 
-            {/* Center Column: Thread-Connected Node Flow Canvas (w: 1032px, h: 800px) */}
             <div className="flex-1 relative min-h-0 bg-zinc-950/40 rounded-2xl border border-zinc-800 p-4 overflow-hidden">
               <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
                 <defs>
@@ -531,7 +540,7 @@ export function Hero2Showcase() {
                   <path key={`bg-${idx}`} d={flow.d} stroke={flow.color} strokeWidth="1.5" fill="none" opacity="0.1" />
                 ))}
 
-                {hero2NetworkFlows.map((flow, idx) => {
+                {isActive && hero2NetworkFlows.map((flow, idx) => {
                   const filterId = flow.color === GREEN ? "url(#glow-green-h2)" : flow.color === GOLD ? "url(#glow-gold-h2)" : "url(#glow-amber-h2)"
                   return (
                     <circle key={`sig-${idx}`} r="3.5" fill={flow.color} filter={filterId}>
@@ -541,7 +550,6 @@ export function Hero2Showcase() {
                 })}
               </svg>
 
-              {/* Central Decoy VM Shield Node */}
               <div className="absolute top-[320px] left-[386px] w-[260px] h-[160px] rounded-2xl p-4 flex flex-col items-center justify-center border-2 border-[oklch(0.78_0.14_65)] bg-zinc-950 z-10 shadow-2xl">
                 <div className="relative flex size-12 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-2">
                   <span className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-60" />
@@ -552,7 +560,6 @@ export function Hero2Showcase() {
                 <div className="text-[9px] font-mono text-emerald-400/80 font-semibold mt-1">100% BYPASSED</div>
               </div>
 
-              {/* Surrounding Nodes */}
               {hero2Nodes.map((node) => {
                 const Icon = node.icon
                 return (
@@ -583,9 +590,7 @@ export function Hero2Showcase() {
               })}
             </div>
 
-            {/* Right Column: Bypass rates and static hardware stats */}
             <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0 font-sans">
-              {/* Bypass reliability rates */}
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
                 <h3 className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-4 flex items-center gap-1.5 font-mono">
                   <BarChart3 size={12} style={{ color: GOLD }} />
@@ -614,7 +619,6 @@ export function Hero2Showcase() {
                 </div>
               </div>
 
-              {/* Process Sandbox Telemetry */}
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-1 flex flex-col justify-between min-h-0">
                 <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5 flex-shrink-0 font-mono">
                   <Activity size={12} style={{ color: GOLD }} />
@@ -643,7 +647,6 @@ export function Hero2Showcase() {
                 </div>
               </div>
 
-              {/* Masked Physical Hardware Specs */}
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
                 <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3.5 flex items-center gap-1.5 font-mono">
                   <Settings size={12} style={{ color: GOLD }} />
@@ -666,10 +669,8 @@ export function Hero2Showcase() {
                 </div>
               </div>
             </div>
-
           </div>
 
-          {/* Bottom Stats Bar */}
           <div className="mt-6 flex border-t border-zinc-800 justify-between items-center pt-4 flex-shrink-0 font-mono">
             <div className="flex gap-1">
               {[
@@ -692,15 +693,14 @@ export function Hero2Showcase() {
               Verify Client Integrity
             </div>
           </div>
-
         </div>
       </div>
     </ScaledContainer>
   )
-}
+})
 
 // ============================================================================
-// 3. HERO 3: LICENSE & DISCORD WHITELIST SHOWCASE (100% Exact Replica of DiscordWhitelist.tsx)
+// 3. HERO 3: LICENSE & DISCORD WHITELIST SHOWCASE
 // ============================================================================
 const hero3Features = [
   { icon: Key, label: "Keyless Auth", desc: "OAuth2 handshake — zero secrets", hue: "85 30% 65%" },
@@ -746,7 +746,7 @@ const hero3QuickStats = [
   { icon: Clock, label: "Uptime", value: "99.97%" },
 ]
 
-export function Hero3Showcase() {
+export const Hero3Showcase = memo(function Hero3Showcase({ isActive = true }: { isActive?: boolean }) {
   const [logs, setLogs] = useState([
     { time: "09:02:11", event: "DISCORD_OAUTH_INIT", status: "ok", detail: "session req — 0x7a1f" },
     { time: "09:02:11", event: "TOKEN_EXCHANGE", status: "ok", detail: "200 — 847ms" },
@@ -762,6 +762,7 @@ export function Hero3Showcase() {
   const [sessionCount, setSessionCount] = useState(847)
 
   useEffect(() => {
+    if (!isActive) return
     const interval = setInterval(() => {
       if (simulating) return
       setLogs((prev) => {
@@ -777,7 +778,7 @@ export function Hero3Showcase() {
       })
     }, 4500)
     return () => clearInterval(interval)
-  }, [simulating])
+  }, [simulating, isActive])
 
   const startSimulation = () => {
     setSimulating(true)
@@ -816,7 +817,6 @@ export function Hero3Showcase() {
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
@@ -836,9 +836,7 @@ export function Hero3Showcase() {
             </div>
           </div>
 
-          {/* Main Body Grid */}
           <div className="flex-1 flex gap-6 min-h-0 items-stretch">
-            {/* Left Column */}
             <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0">
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 font-mono">
@@ -887,7 +885,6 @@ export function Hero3Showcase() {
               </div>
             </div>
 
-            {/* Center Column */}
             <div className="flex-1 flex flex-col gap-5 min-h-0">
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0 font-mono">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0">
@@ -925,7 +922,7 @@ export function Hero3Showcase() {
                     <path d="M 170 100 C 260 150, 300 150, 390 100" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" fill="none" />
                     <path d="M 490 100 C 580 50, 620 50, 710 100" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" fill="none" />
                     <path d="M 490 100 C 580 150, 620 150, 710 100" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" fill="none" />
-                    {!simulating && (
+                    {!simulating && isActive && (
                       <>
                         <circle r="2.5" fill={GOLD} opacity="0.3">
                           <animateMotion dur="4s" repeatCount="indefinite" path="M 170 100 C 260 50, 300 50, 390 100" />
@@ -972,14 +969,14 @@ export function Hero3Showcase() {
 
                 <div className="flex items-center justify-between pt-3 border-t border-zinc-800/40">
                   {hero3AuthNodes.map((node, i) => {
-                    const isActive = i === activeStage
+                    const isActiveStage = i === activeStage
                     const isCompleted = i < activeStage && activeStage !== -1
                     const isIdle = activeStage === -1
-                    const color = isActive ? GOLD : isCompleted ? GREEN : "oklch(0.55 0 0)"
+                    const color = isActiveStage ? GOLD : isCompleted ? GREEN : "oklch(0.55 0 0)"
                     return (
                       <div key={node.id} className="flex flex-1 items-center">
                         <div className="flex flex-col items-center gap-1.5">
-                          <div className="flex size-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950" style={{ borderColor: isActive ? GOLD : isCompleted ? `${GREEN}50` : "transparent" }}>
+                          <div className="flex size-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950" style={{ borderColor: isActiveStage ? GOLD : isCompleted ? `${GREEN}50` : "transparent" }}>
                             <node.icon className="size-4" style={{ color: isIdle && i === 0 ? GOLD : color }} />
                           </div>
                           <span className="text-[9px]" style={{ color: isIdle && i === 0 ? GOLD : color }}>{node.label}</span>
@@ -1012,7 +1009,6 @@ export function Hero3Showcase() {
               </div>
             </div>
 
-            {/* Right Column */}
             <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0 font-mono">
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
                 <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5">
@@ -1032,7 +1028,6 @@ export function Hero3Showcase() {
                 </div>
               </div>
 
-              {/* Connected Guilds Card */}
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
                 <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5">
                   <Globe size={12} style={{ color: GOLD }} />
@@ -1069,7 +1064,6 @@ export function Hero3Showcase() {
             </div>
           </div>
 
-          {/* Footer Bar */}
           <div className="mt-6 flex border-t border-zinc-800 justify-between items-center pt-4 flex-shrink-0 font-mono text-xs">
             <div className="flex gap-1">
               {hero3QuickStats.map((s, i) => {
@@ -1101,4 +1095,4 @@ export function Hero3Showcase() {
       </div>
     </ScaledContainer>
   )
-}
+})
