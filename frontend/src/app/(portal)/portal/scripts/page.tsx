@@ -100,7 +100,7 @@ export default function ScriptsPage() {
       return
     }
     const loaderUrl = `${BASE_API}/v1/release/${script.prefix}.lua`
-    const loadstring = `-- _G.Key = "YOUR_KEY"\nloadstring(game:HttpGet("${loaderUrl}?key=YOUR_KEY"))()`
+    const loadstring = `_G.Key = "YOUR_KEY"\nloadstring(game:HttpGet("${loaderUrl}"))()`
     navigator.clipboard.writeText(loadstring)
     setCopiedScript(script.name)
     setTimeout(() => setCopiedScript(null), 2000)
