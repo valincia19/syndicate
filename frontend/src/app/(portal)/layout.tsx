@@ -43,10 +43,13 @@ function PortalShell({ children }: { children: React.ReactNode }) {
       window.location.pathname.includes("/portal/payment")
     if (isPaymentPage) return
 
-    // Only redirect AFTER loading is done and user is confirmed null.
-    // This prevents redirect during initial hydration race.
-    if (!isLoading && !user) {
-      router.replace("/login")
+    // Redirect to login if not authenticated, or to verify if email is unverified
+    if (!isLoading) {
+      if (!user) {
+        router.replace("/login")
+      } else if (!user.verified && !user.discord_id) {
+        router.replace("/verify")
+      }
     }
   }, [user, isLoading, router])
 
