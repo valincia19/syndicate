@@ -7,6 +7,7 @@
  */
 
 import { logger } from './logger'
+import { obfuscate, deobfuscate } from './obfuscate'
 
 // Empty = same-origin proxy via next.config.ts → http://localhost:5000
 // In production, set NEXT_PUBLIC_API_URL to the real backend URL.
@@ -22,14 +23,18 @@ let inMemoryToken: string | null = null
 export const tokenManager = {
   setToken(token: string) {
     inMemoryToken = token
-    try { localStorage.setItem(LS_TOKEN_KEY, token) } catch { /* storage full / disabled */ }
+    try { localStorage.setItem(LS_TOKEN_KEY, obfuscate(token)) } catch { /* storage full / disabled */ }
   },
   getToken(): string | null {
     if (inMemoryToken) return inMemoryToken
     // Hydrate from localStorage on first call after page reload
     try {
       const stored = localStorage.getItem(LS_TOKEN_KEY)
-      if (stored) { inMemoryToken = stored; return stored }
+      if (stored) {
+        const token = deobfuscate(stored)
+        inMemoryToken = token
+        return token
+      }
     } catch { /* SSR or storage unavailable */ }
     return null
   },
@@ -42,7 +47,7 @@ export const tokenManager = {
     if (!inMemoryToken) {
       try {
         const stored = localStorage.getItem(LS_TOKEN_KEY)
-        if (stored) inMemoryToken = stored
+        if (stored) inMemoryToken = deobfuscate(stored)
       } catch { /* ignore */ }
     }
   },

@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, ty
 import { tokenManager, ApiError } from "@/lib/api"
 import { authService, type UserResponse } from "@/services/auth"
 import { logger } from "@/lib/logger"
+import { obfuscate, deobfuscate } from "@/lib/obfuscate"
 
 export interface AuthUser {
   id: string
@@ -98,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(authUser)
       // Mirror user in localStorage for instant paint on next load
       if (typeof window !== "undefined") {
-        localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(authUser))
+        localStorage.setItem(AUTH_USER_STORAGE_KEY, obfuscate(JSON.stringify(authUser)))
       }
       // Persist JWT from profile response for WebSocket sub-protocol auth.
       // The backend now returns a fresh token alongside the user profile.
@@ -136,9 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     Promise.resolve().then(() => {
       if (typeof window !== "undefined") {
-        const cachedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY)
-        if (cachedUser) {
+        const stored = localStorage.getItem(AUTH_USER_STORAGE_KEY)
+        if (stored) {
           try {
+            const cachedUser = deobfuscate(stored)
             const parsed = JSON.parse(cachedUser) as AuthUser
             logger.debug('STUDIO:AUTH', 'Loaded cached user from localStorage', { userId: parsed.id })
             setUser(parsed)
@@ -161,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser)
     if (typeof window !== "undefined") {
       if (newUser) {
-        localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(newUser))
+        localStorage.setItem(AUTH_USER_STORAGE_KEY, obfuscate(JSON.stringify(newUser)))
       } else {
         localStorage.removeItem(AUTH_USER_STORAGE_KEY)
       }
