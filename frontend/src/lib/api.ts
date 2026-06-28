@@ -8,10 +8,9 @@
 
 import { logger } from './logger'
 import { obfuscate, deobfuscate } from './obfuscate'
+import { getBackendUrl } from './config'
 
-// Empty = same-origin proxy via next.config.ts → http://localhost:5000
-// In production, set NEXT_PUBLIC_API_URL to the real backend URL.
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || ""
+const BASE_URL = getBackendUrl()
 
 // Persistent token store - backed by localStorage so it survives page reloads.
 // The httpOnly cookie (auth_token) cannot be read by JS, so we mirror the JWT

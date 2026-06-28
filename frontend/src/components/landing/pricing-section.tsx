@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/components/providers/language-provider"
 
-const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+import { getBackendUrl } from "@/lib/config"
+
+const getBaseApi = () => getBackendUrl()
 
 interface PlanData {
   price_usd: number
