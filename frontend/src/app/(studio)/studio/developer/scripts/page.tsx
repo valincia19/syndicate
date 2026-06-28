@@ -52,6 +52,10 @@ function ScriptsContent(): React.ReactNode {
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [sidebarHeight, setSidebarHeight] = useState(400)
 
+  useEffect(() => {
+    setReady(true)
+  }, [])
+
   // ── Zustand store (shallow selectors) ──────────────────
   const store = useExplorerStore
   const activeFileContent = useExplorerStore(s => s.activeFileContent)
