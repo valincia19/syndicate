@@ -145,29 +145,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       )
     }
 
-    // ── Auto-sync JWT from Set-Cookie to localStorage ──────────
-    // When the backend sets/refreshes the httpOnly auth_token cookie
-    // (login, register, or any endpoint that re-issues the cookie),
-    // extract the token value and persist it so WebSocket auth via
-    // sub-protocol (which needs the raw JWT) keeps working across
-    // page reloads without requiring a re-login.
-    try {
-      const setCookie = response.headers.get('Set-Cookie')
-      if (setCookie) {
-        const match = setCookie.match(/auth_token=([^;]+)/)
-        if (match) {
-          const cookieToken = decodeURIComponent(match[1])
-          // Only persist if we don't already have a token in memory
-          // (avoids unnecessary localStorage writes on every request)
-          if (cookieToken && !tokenManager.getToken()) {
-            tokenManager.setToken(cookieToken)
-          }
-        }
-      }
-    } catch {
-      // Silently ignore header parsing errors
-    }
-
     return data as T
   } catch (error: unknown) {
     if (error instanceof ApiError) throw error

@@ -10,13 +10,21 @@ const { AppError } = require('../../middleware/errorHandler.middleware');
 // Cookie options helper - consistent across all auth endpoints
 function getAuthCookieOptions(env) {
   const isProduction = env.nodeEnv === 'production';
-  return {
+  const sameSiteMode = env.cookieSameSite ? env.cookieSameSite : 'lax';
+  
+  const options = {
     httpOnly: true,           // Prevent XSS - not readable by JS (intentional)
     secure: isProduction,     // HTTPS only in prod, HTTP ok in dev
-    sameSite: 'lax',          // 'lax' allows cross-subdomain top-level navigation / redirects
+    sameSite: sameSiteMode,   // Support custom sameSite settings (e.g. 'none' for cross-site fetch)
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
     path: '/',
   };
+
+  if (isProduction && env.cookieDomain) {
+    options.domain = env.cookieDomain;
+  }
+
+  return options;
 }
 
 // Helper to resolve the correct frontend URL dynamically from environment or request headers
@@ -216,12 +224,10 @@ class AuthController {
   async logout(req, res, next) {
     try {
       const env = require('../../config/env');
-      res.clearCookie('auth_token', {
-        httpOnly: true,
-        secure: env.nodeEnv === 'production',
-        sameSite: env.nodeEnv === 'production' ? 'strict' : 'lax',
-        path: '/',
-      });
+      const clearOptions = getAuthCookieOptions(env);
+      delete clearOptions.maxAge;
+
+      res.clearCookie('auth_token', clearOptions);
       
       res.status(200).json({
         status: 'success',

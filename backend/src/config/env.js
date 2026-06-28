@@ -36,6 +36,10 @@ const env = {
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : ['http://localhost:5173'],
 
+  // Cookie Configuration for Production / Cross-Subdomain
+  cookieDomain: process.env.COOKIE_DOMAIN || '',
+  cookieSameSite: process.env.COOKIE_SAME_SITE || '',
+
   // JWT
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
