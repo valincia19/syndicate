@@ -7,7 +7,7 @@ import {
   Target, ScanLine, Satellite, Radar,
   Shield, Hexagon, Siren, CircleDot, Diamond, Square,
   ShieldAlert, ShieldCheck, Activity, Settings, Bell,
-  MessageCircle, Link2, Users, Key, Server, UserCheck, Globe
+  MessageCircle, Link2, Users, Key, Server, UserCheck, Globe, ChevronRight, Clock, BarChart3
 } from "lucide-react"
 
 // ─── Shared Theme Constants ───
@@ -17,34 +17,39 @@ const DIM = "oklch(0.55 0 0)"
 const GREEN = "oklch(0.72 0.19 150)"
 const AMBER = "oklch(0.79 0.15 85)"
 
-// ─── Scaled Wrapper Component ───
+// ─── Scaled Wrapper Component (Dynamic ResizeObserver for 100% responsive accuracy) ───
 function ScaledContainer({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.4)
 
   useEffect(() => {
-    const handleResize = () => {
-      if (!containerRef.current) return
-      const w = containerRef.current.clientWidth
-      const h = containerRef.current.clientHeight
-      const scaleX = w / 1920
-      const scaleY = h / 1080
-      setScale(Math.min(scaleX, scaleY))
+    const el = containerRef.current
+    if (!el) return
+
+    const updateScale = () => {
+      const w = el.clientWidth
+      const h = el.clientHeight
+      if (w > 0 && h > 0) {
+        const scaleX = w / 1920
+        const scaleY = h / 1080
+        setScale(Math.min(scaleX, scaleY))
+      }
     }
 
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    const timer = setTimeout(handleResize, 100)
-    return () => {
-      window.removeEventListener("resize", handleResize)
-      clearTimeout(timer)
-    }
+    updateScale()
+
+    const observer = new ResizeObserver(() => {
+      updateScale()
+    })
+    observer.observe(el)
+
+    return () => observer.disconnect()
   }, [])
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden bg-zinc-950">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden bg-zinc-950 select-none">
       <div
-        className="origin-center flex-shrink-0"
+        className="origin-center flex-shrink-0 transition-transform duration-150 ease-out"
         style={{
           transform: `scale(${scale})`,
           width: "1920px",
@@ -58,7 +63,7 @@ function ScaledContainer({ children }: { children: React.ReactNode }) {
 }
 
 // ============================================================================
-// 1. HERO 1: NEXT-GEN EXECUTION PREVIEW (100% Exact from design-assets-hub-v2)
+// 1. HERO 1: NEXT-GEN EXECUTION PREVIEW (100% Exact Replica of NextGenExecutionPreview.tsx)
 // ============================================================================
 const hero1OrbitStats = [
   { label: "Inject", value: "0.42ms", icon: Zap, color: ACCENT },
@@ -229,7 +234,7 @@ export function Hero1Showcase() {
               <div className="absolute top-0 left-0 right-0 h-10 border-b border-zinc-800/40 bg-zinc-900/20 rounded-t-2xl px-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Radar size={13} style={{ color: GOLD }} />
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Core Telemetry & Thread Grid</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 font-mono">Core Telemetry & Thread Grid</span>
                 </div>
                 <span className="text-[9px] font-mono text-zinc-500">SYSTEM: ACTIVE</span>
               </div>
@@ -251,12 +256,12 @@ export function Hero1Showcase() {
 
             <div className="flex-1 flex flex-col gap-5 h-full min-w-0">
               <div className="flex-1 rounded-2xl p-5 flex flex-col min-h-0 border border-zinc-800 bg-zinc-900/40">
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0 font-mono">
                   <div className="flex items-center gap-2">
                     <Satellite size={13} style={{ color: DIM }} />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 font-mono">Execution Log</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Execution Log</span>
                   </div>
-                  <span className="text-[9px] font-mono text-emerald-400">BYPASS: OK</span>
+                  <span className="text-[9px] text-emerald-400">BYPASS: OK</span>
                 </div>
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <Hero1TerminalStream step={step} />
@@ -318,7 +323,7 @@ export function Hero1Showcase() {
 }
 
 // ============================================================================
-// 2. HERO 2: ANTI-BAN PROTECTION SHOWCASE (100% Exact Copy of AntiBanProtection.tsx)
+// 2. HERO 2: ANTI-BAN PROTECTION SHOWCASE (100% Exact Replica of AntiBanProtection.tsx)
 // ============================================================================
 const hero2Nodes = [
   { id: "poly", name: "Polymorphic Engine", x: 40, y: 80, icon: Hexagon, status: "ACTIVE", detail: "Entropy: 99.8%", color: GREEN },
@@ -405,7 +410,7 @@ function Hero2ThreatAlertFeed() {
   }, [])
 
   return (
-    <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+    <div className="space-y-3 flex-1 overflow-y-auto pr-1 select-none font-mono">
       {alerts.map((a) => (
         <div key={a.id} className="p-3 rounded-xl border border-zinc-800 bg-zinc-900/20 flex gap-3 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/40">
           <div className="flex-shrink-0 size-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mt-0.5">
@@ -430,7 +435,6 @@ export function Hero2Showcase() {
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6 flex-shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
@@ -450,9 +454,7 @@ export function Hero2Showcase() {
             </div>
           </div>
 
-          {/* Main Body */}
           <div className="flex-1 flex gap-6 min-h-0 items-stretch">
-            {/* Left Column */}
             <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0">
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex flex-col items-center text-center justify-center">
                 <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5 self-start font-mono">
@@ -480,7 +482,6 @@ export function Hero2Showcase() {
               </div>
             </div>
 
-            {/* Center Column: Thread-Connected Node Flow Canvas */}
             <div className="flex-1 relative min-h-0 bg-zinc-950/40 rounded-2xl border border-zinc-800 p-4 overflow-hidden">
               <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
                 <defs>
@@ -512,7 +513,6 @@ export function Hero2Showcase() {
                 })}
               </svg>
 
-              {/* Central Decoy VM Shield Node */}
               <div className="absolute top-[320px] left-[386px] w-[260px] h-[160px] rounded-2xl p-4 flex flex-col items-center justify-center border-2 border-[oklch(0.78_0.14_65)] bg-zinc-950 z-10 shadow-2xl">
                 <div className="relative flex size-12 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-2">
                   <span className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-60" />
@@ -523,7 +523,6 @@ export function Hero2Showcase() {
                 <div className="text-[9px] font-mono text-emerald-400/80 font-semibold mt-1">100% BYPASSED</div>
               </div>
 
-              {/* Surrounding Nodes */}
               {hero2Nodes.map((node) => {
                 const Icon = node.icon
                 return (
@@ -555,7 +554,6 @@ export function Hero2Showcase() {
             </div>
           </div>
 
-          {/* Footer Bar */}
           <div className="mt-6 flex border-t border-zinc-800 justify-between items-center pt-4 flex-shrink-0 font-mono text-xs">
             <div className="flex items-center gap-6 text-zinc-400">
               <div>BYPASS RATE: <strong className="text-emerald-400">99.9%</strong></div>
@@ -571,89 +569,357 @@ export function Hero2Showcase() {
 }
 
 // ============================================================================
-// 3. HERO 3: DISCORD WHITELIST SHOWCASE (100% Exact Copy of DiscordWhitelist.tsx)
+// 3. HERO 3: DISCORD WHITELIST SHOWCASE (100% Exact Replica of DiscordWhitelist.tsx)
 // ============================================================================
+const hero3Features = [
+  { icon: Key, label: "Keyless Auth", desc: "OAuth2 handshake — zero secrets", hue: "85 30% 65%" },
+  { icon: Shield, label: "Role Verification", desc: "Guild membership check < 50ms", hue: "160 30% 65%" },
+  { icon: Link2, label: "Account Linking", desc: "Discord ID ↔ Profile binding", hue: "270 25% 70%" },
+  { icon: Users, label: "Auto-Role Sync", desc: "Cross-server propagation", hue: "190 30% 65%" },
+]
+
+const hero3AuthNodes = [
+  { id: "oauth", label: "OAuth", icon: MessageCircle },
+  { id: "token", label: "Token", icon: Key },
+  { id: "guild", label: "Guild", icon: Shield },
+  { id: "role", label: "Role", icon: UserCheck },
+  { id: "link", label: "Account", icon: Link2 },
+]
+
+const hero3RoleDist = [
+  { role: "Member", pct: 62, color: "bg-zinc-700/30", text: "text-zinc-400" },
+  { role: "Premium", pct: 22, color: "bg-[oklch(0.78_0.14_65/0.35)]", text: "text-[oklch(0.78_0.14_65)]" },
+  { role: "Pro", pct: 11, color: "bg-[oklch(0.78_0.14_65/0.25)]", text: "text-[oklch(0.78_0.14_65/0.8)]" },
+  { role: "Staff", pct: 5, color: "bg-emerald-500/20", text: "text-emerald-400" },
+]
+
+const hero3TopUsers = [
+  { rank: 1, id: "Valinc_Dev", role: "Staff", whitelisted: 1042, avatar: "V" },
+  { rank: 2, id: "NovaSec", role: "Premium", whitelisted: 891, avatar: "N" },
+  { rank: 3, id: "HexCore", role: "Pro", whitelisted: 647, avatar: "H" },
+  { rank: 4, id: "SynthWave", role: "Premium", whitelisted: 503, avatar: "S" },
+  { rank: 5, id: "QuantumBot", role: "Member", whitelisted: 412, avatar: "Q" },
+]
+
 export function Hero3Showcase() {
+  const [logs, setLogs] = useState([
+    { time: "09:02:11", event: "DISCORD_OAUTH_INIT", status: "ok", detail: "session req — 0x7a1f" },
+    { time: "09:02:11", event: "TOKEN_EXCHANGE", status: "ok", detail: "200 — 847ms" },
+    { time: "09:02:12", event: "GUILD_CHECK", status: "ok", detail: "member — guild:105488372" },
+    { time: "09:02:12", event: "ROLE_RESOLVE", status: "ok", detail: "premium — tier:2" },
+    { time: "09:02:13", event: "PROFILE_LINK", status: "ok", detail: "bound: 213742069" },
+    { time: "09:02:13", event: "WHITELIST_COMMIT", status: "ok", detail: "written — slot:8891" },
+    { time: "09:02:14", event: "WEBHOOK_DISPATCH", status: "ok", detail: "dispatch queue cleared" },
+    { time: "09:02:14", event: "CACHE_INVALIDATE", status: "ok", detail: "purged 4 keys" },
+  ])
+  const [activeStage, setActiveStage] = useState(-1)
+  const [simulating, setSimulating] = useState(false)
+  const [sessionCount, setSessionCount] = useState(847)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (simulating) return
+      setLogs((prev) => {
+        const events = [
+          { event: "HEARTBEAT_PING", status: "ok", detail: "gateway active — 0.08ms lag" },
+          { event: "REDIS_CACHE_SYNC", status: "ok", detail: "synchronized 14 active user roles" },
+          { event: "WEBHOOK_DISPATCH", status: "ok", detail: "200 OK — dispatch guild payload" },
+          { event: "TOKEN_REFRESH", status: "ok", detail: "refreshed token for slot 4410" },
+        ]
+        const newEvent = events[Math.floor(Math.random() * events.length)]
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false })
+        return [...prev.slice(-12), { time, ...newEvent }]
+      })
+    }, 4500)
+    return () => clearInterval(interval)
+  }, [simulating])
+
+  const startSimulation = () => {
+    setSimulating(true)
+    setActiveStage(0)
+    const now = () => new Date().toLocaleTimeString('en-US', { hour12: false })
+    setLogs([{ time: now(), event: "HANDSHAKE_START", status: "pending", detail: "initiate OAuth2 redirection" }])
+
+    const steps = [
+      { event: "OAUTH_AUTHORIZE", detail: "Discord token callback received" },
+      { event: "TOKEN_EXCHANGED", detail: "Access token granted — profile payload locked" },
+      { event: "GUILD_VERIFY", detail: "Guild membership verified (Valinc server)" },
+      { event: "ROLE_PROPAGATE", detail: "Propagated Role: Premium (Slot 8891 committed)" },
+      { event: "WHITELIST_SUCCESS", detail: "Handshake completed successfully — Client authorized" }
+    ]
+
+    let current = 0
+    const interval = setInterval(() => {
+      current++
+      if (current <= steps.length) {
+        setActiveStage(current - 1)
+        setLogs(prev => [...prev, { time: now(), event: steps[current - 1].event, status: current === steps.length ? "ok" : "pending", detail: steps[current - 1].detail }])
+      }
+      if (current === steps.length) {
+        clearInterval(interval)
+        setTimeout(() => {
+          setActiveStage(-1)
+          setSimulating(false)
+          setSessionCount(prev => prev + 1)
+          setLogs(prev => [...prev, { time: now(), event: "GATEWAY_IDLE", status: "ok", detail: "Listening for handshake requests..." }])
+        }, 1000)
+      }
+    }, 1000)
+  }
+
   return (
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
+          {/* Header */}
           <div className="flex items-center justify-between mb-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
                 <MessageCircle size={20} style={{ color: GOLD }} />
               </div>
               <div>
-                <h1 className="text-2xl font-normal tracking-tight text-zinc-100 uppercase font-mono">Discord Whitelist & Cloud Vault</h1>
-                <p className="text-xs text-zinc-500">Access hundreds of updated scripts for popular Roblox games with instant one-click execution and Discord OAuth verification.</p>
+                <h1 className="text-2xl font-normal tracking-tight text-zinc-100 font-mono uppercase">Discord Whitelist System</h1>
+                <p className="text-xs text-zinc-500">Instant access with keyless Discord account linkage. Sync roles and run scripts seamlessly without annoying keys.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-900/80 border border-zinc-800 text-emerald-400 font-mono">
-              <UserCheck size={14} />
-              DISCORD BOT LINKED
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              LIVE SECURE
             </div>
           </div>
 
-          <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
-            <div className="col-span-7 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/40 shrink-0 font-mono">
-                <div className="flex items-center gap-2">
-                  <Key size={13} style={{ color: GOLD }} />
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">OAuth Handshake Pipeline</span>
+          {/* Main Body Grid */}
+          <div className="flex-1 flex gap-6 min-h-0 items-stretch">
+            {/* Left Column */}
+            <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0">
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 font-mono">
+                  <div>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Synced Roles</span>
+                    <p className="mt-0.5 text-[9px] text-zinc-500">3,732 whitelisted players</p>
+                  </div>
+                  <span className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-0.5 text-[9px] text-zinc-500">4 TIERS</span>
                 </div>
-                <span className="text-[9px] text-zinc-500">HANDSHAKE: FAST</span>
+                <div className="mb-4 flex h-2 gap-0.5 overflow-hidden rounded-full bg-zinc-950">
+                  {hero3RoleDist.map((r) => (
+                    <div key={r.role} className={`h-full rounded-full transition-all ${r.color}`} style={{ width: `${r.pct}%` }} />
+                  ))}
+                </div>
+                <div className="space-y-2 font-mono">
+                  {hero3RoleDist.map((r) => (
+                    <div key={r.role} className="flex items-center gap-3">
+                      <span className={`w-16 text-[10px] font-medium ${r.text}`}>{r.role}</span>
+                      <div className="h-1.5 flex-1 rounded-full bg-zinc-950 overflow-hidden">
+                        <div className={`h-full rounded-full ${r.color}`} style={{ width: `${r.pct}%` }} />
+                      </div>
+                      <span className="w-8 text-right text-[10px] text-zinc-500">{r.pct}%</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 flex-1 items-center">
-                {[
-                  { title: "Keyless Auth Handshake", desc: "OAuth2 handshake with zero secrets exposed", icon: Key },
-                  { title: "Role Verification <50ms", desc: "Instant Discord server guild role verification", icon: Shield },
-                  { title: "Account Binding", desc: "Discord ID ↔ VALINC License binding", icon: Link2 },
-                  { title: "Auto-Role Propagation", desc: "Automatic cross-server license status sync", icon: Users },
-                ].map((item, i) => (
-                  <div key={i} className="p-5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 flex flex-col gap-2">
-                    <item.icon size={20} style={{ color: GOLD }} />
-                    <div className="text-sm font-bold text-zinc-200 font-mono">{item.title}</div>
-                    <div className="text-xs text-zinc-400">{item.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="col-span-5 flex flex-col gap-5 h-full min-w-0">
-              <div className="flex-1 rounded-2xl p-6 border border-zinc-800 bg-zinc-900/40 flex flex-col">
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/40 shrink-0 font-mono">
-                  <div className="flex items-center gap-2">
-                    <Server size={13} style={{ color: GOLD }} />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Live Whitelist Commit Stream</span>
-                  </div>
-                  <span className="text-[9px] text-emerald-400">SYNC: ACTIVE</span>
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-1 flex flex-col min-h-0">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0 font-mono">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">High-Activity Keys</span>
+                  <Globe className="size-3.5 text-zinc-500" />
                 </div>
-                <div className="space-y-2.5 flex-1 overflow-hidden font-mono text-xs">
-                  {[
-                    { event: "DISCORD_OAUTH_INIT", detail: "Session req — 0x7a1f ok" },
-                    { event: "TOKEN_EXCHANGE", detail: "200 OK — 42ms response" },
-                    { event: "GUILD_CHECK_PASS", detail: "Member verified — Guild:VALINC" },
-                    { event: "ROLE_RESOLVE_SUCCESS", detail: "Role: PREMIUM_VIP tier" },
-                    { event: "PROFILE_LINK_BOUND", detail: "ID bound: 213742069" },
-                    { event: "WHITELIST_COMMIT", detail: "Slot written: #8891" },
-                  ].map((log, i) => (
-                    <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-950/40 border border-zinc-800/60 text-zinc-300">
-                      <span className="text-emerald-400 font-bold">{log.event}</span>
-                      <span className="text-zinc-500 text-[11px]">{log.detail}</span>
+                <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 font-mono">
+                  {hero3TopUsers.map((u) => (
+                    <div key={u.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors bg-zinc-950/20 border border-zinc-900/40 hover:bg-zinc-900/20">
+                      <span className="w-3 text-[9px] text-zinc-600">#{u.rank}</span>
+                      <div className="flex size-6.5 items-center justify-center rounded-md border border-zinc-800 bg-zinc-950 text-[10px] font-bold text-zinc-400">{u.avatar}</div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[11px] font-bold text-zinc-300 truncate block">{u.id}</span>
+                        <span className="text-[8.5px] text-zinc-500">{u.role}</span>
+                      </div>
+                      <span className="text-[10px] text-[oklch(0.78_0.14_65/0.8)] font-bold">{u.whitelisted.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+
+            {/* Center Column */}
+            <div className="flex-1 flex flex-col gap-5 min-h-0">
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0 font-mono">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Server size={12} style={{ color: GOLD }} />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">OAuth Handshake Pipeline</span>
+                  </div>
+                  <button
+                    disabled={simulating}
+                    onClick={startSimulation}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-bold tracking-wide border border-zinc-800 bg-zinc-950 hover:bg-zinc-900 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Play size={10} fill="currentColor" className={simulating ? "animate-pulse" : ""} style={{ color: simulating ? GOLD : "inherit" }} />
+                    {simulating ? "PROCESSING..." : "RUN TEST SIMULATION"}
+                  </button>
+                </div>
+
+                <div className="relative w-full h-[200px] border border-zinc-800/40 rounded-xl bg-zinc-950/40 overflow-hidden mb-4">
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                    <defs>
+                      <filter id="glow-gold-h3" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                      <filter id="glow-blue-h3" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                      <filter id="glow-green-h3" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    </defs>
+                    <path d="M 170 100 C 260 50, 300 50, 390 100" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" fill="none" />
+                    <path d="M 170 100 C 260 150, 300 150, 390 100" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" fill="none" />
+                    <path d="M 490 100 C 580 50, 620 50, 710 100" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" fill="none" />
+                    <path d="M 490 100 C 580 150, 620 150, 710 100" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" fill="none" />
+                    {!simulating && (
+                      <>
+                        <circle r="2.5" fill={GOLD} opacity="0.3">
+                          <animateMotion dur="4s" repeatCount="indefinite" path="M 170 100 C 260 50, 300 50, 390 100" />
+                        </circle>
+                        <circle r="2.5" fill={GREEN} opacity="0.3">
+                          <animateMotion dur="4.5s" begin="1s" repeatCount="indefinite" path="M 490 100 C 580 150, 620 150, 710 100" />
+                        </circle>
+                      </>
+                    )}
+                    {simulating && (
+                      <>
+                        {(activeStage === 0 || activeStage === 1) && (
+                          <>
+                            <circle r="4.5" fill={GOLD} filter="url(#glow-gold-h3)"><animateMotion dur="1s" repeatCount="indefinite" path="M 170 100 C 260 50, 300 50, 390 100" /></circle>
+                            <circle r="4.5" fill="#5865F2" filter="url(#glow-blue-h3)"><animateMotion dur="1s" begin="0.5s" repeatCount="indefinite" path="M 170 100 C 260 150, 300 150, 390 100" /></circle>
+                          </>
+                        )}
+                        {(activeStage === 2 || activeStage === 3) && (
+                          <>
+                            <circle r="4.5" fill={GOLD} filter="url(#glow-gold-h3)"><animateMotion dur="1s" repeatCount="indefinite" path="M 490 100 C 580 50, 620 50, 710 100" /></circle>
+                            <circle r="4.5" fill={GREEN} filter="url(#glow-green-h3)"><animateMotion dur="1s" begin="0.5s" repeatCount="indefinite" path="M 490 100 C 580 150, 620 150, 710 100" /></circle>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </svg>
+                  {[
+                    { id: "discord", x: 120, y: 100, label: "DISCORD AUTH", sub: "OAuth2 Provider", icon: MessageCircle, color: "#5865F2" },
+                    { id: "gateway", x: 440, y: 100, label: "VALINC CORE", sub: "Security Gateway", icon: Shield, color: GOLD },
+                    { id: "client", x: 760, y: 100, label: "ROBLOX ENGINE", sub: "Zero-Lag Injector", icon: Zap, color: GREEN }
+                  ].map((n) => {
+                    const NodeIcon = n.icon
+                    return (
+                      <div key={n.id} className="absolute w-[160px] flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2" style={{ left: `${n.x}px`, top: `${n.y}px` }}>
+                        <div className="size-13 rounded-2xl bg-zinc-950 border flex items-center justify-center relative" style={{ borderColor: n.color + "40" }}>
+                          <NodeIcon className="size-5.5" style={{ color: n.color }} />
+                        </div>
+                        <div className="text-[10px] font-bold text-zinc-200 mt-2">{n.label}</div>
+                        <div className="text-[8px] text-zinc-500 mt-0.5 uppercase">{n.sub}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-zinc-800/40">
+                  {hero3AuthNodes.map((node, i) => {
+                    const isActive = i === activeStage
+                    const isCompleted = i < activeStage && activeStage !== -1
+                    const isIdle = activeStage === -1
+                    const color = isActive ? GOLD : isCompleted ? GREEN : "oklch(0.55 0 0)"
+                    return (
+                      <div key={node.id} className="flex flex-1 items-center">
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div className="flex size-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950" style={{ borderColor: isActive ? GOLD : isCompleted ? `${GREEN}50` : "transparent" }}>
+                            <node.icon className="size-4" style={{ color: isIdle && i === 0 ? GOLD : color }} />
+                          </div>
+                          <span className="text-[9px]" style={{ color: isIdle && i === 0 ? GOLD : color }}>{node.label}</span>
+                        </div>
+                        {i < hero3AuthNodes.length - 1 && <div className="h-[1.5px] flex-1 mx-2 bg-zinc-800" style={{ background: isCompleted ? `linear-gradient(90deg, ${GREEN}, ${GOLD})` : "none" }} />}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-1 flex flex-col min-h-0 font-mono">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Activity size={12} style={{ color: GOLD }} />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Live Gateway Logs</span>
+                  </div>
+                  <span className="text-[9px] text-zinc-500">streaming</span>
+                </div>
+                <div className="space-y-1.5 flex-1 overflow-y-auto pr-1">
+                  {logs.map((entry, i) => (
+                    <div key={i} className="flex items-center gap-3 rounded-lg px-2.5 py-1.5 text-[10px] bg-zinc-950/20 border border-zinc-900/40">
+                      <span className="w-14 shrink-0 text-zinc-600 tabular-nums">{entry.time}</span>
+                      <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${entry.status === "ok" ? "bg-emerald-500/50" : "bg-amber-500/50"}`} />
+                      <span className={`shrink-0 font-bold ${entry.status === "ok" ? "text-zinc-400" : "text-amber-400"}`}>{entry.event}</span>
+                      <span className="truncate text-zinc-500">{entry.detail}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0 font-mono">
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
+                <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5">
+                  <Shield size={12} style={{ color: GOLD }} />
+                  Verification Features
+                </div>
+                <div className="space-y-2.5">
+                  {hero3Features.map((f) => (
+                    <div key={f.label} className="flex items-center gap-3 p-2 rounded-lg bg-zinc-950/40 border border-zinc-800/60">
+                      <f.icon size={14} style={{ color: GOLD }} />
+                      <div>
+                        <div className="text-[11px] font-bold text-zinc-200">{f.label}</div>
+                        <div className="text-[9px] text-zinc-500">{f.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-1 flex flex-col min-h-0">
+                <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5">
+                  <Activity size={12} style={{ color: GOLD }} />
+                  Active Gateway Status
+                </div>
+                <div className="space-y-3 flex-1 flex flex-col justify-center text-[11px]">
+                  <div className="flex justify-between items-center"><span className="text-zinc-400">OAuth2 Gateway IP</span><span className="text-zinc-300">104.22.41.89</span></div>
+                  <div className="flex justify-between items-center"><span className="text-zinc-400">Linked Webhooks</span><span className="text-emerald-400 font-semibold">4 / 4 Active Listeners</span></div>
+                  <div className="flex justify-between items-center"><span className="text-zinc-400">Total Live Sessions</span><span className="text-zinc-200 font-semibold">{sessionCount} Syncs</span></div>
+                  <div className="flex justify-between items-center"><span className="text-zinc-400">Last SSL Handshake</span><span style={{ color: GOLD }} className="font-semibold">TLSv1.3 (0.4ms)</span></div>
+                  <div className="h-1.5 rounded-full bg-zinc-950 overflow-hidden mt-1 shrink-0"><div className="h-full bg-emerald-500/80 rounded-full" style={{ width: "99.8%" }} /></div>
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* Footer Bar */}
           <div className="mt-6 flex border-t border-zinc-800 justify-between items-center pt-4 flex-shrink-0 font-mono text-xs">
             <div className="flex items-center gap-6 text-zinc-400">
               <div>WHITELISTED USERS: <strong className="text-zinc-200">24,890+</strong></div>
               <div>SCRIPTS AVAILABLE: <strong className="text-zinc-200">450+</strong></div>
+              <div>SESSIONS: <strong className="text-zinc-200">{sessionCount}</strong></div>
             </div>
-            <div className="text-zinc-500 text-[10px]">VALINC CLOUD VAULT SYSTEM V2.0</div>
+            <button
+              onClick={startSimulation}
+              disabled={simulating}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all disabled:opacity-50"
+              style={{ background: `linear-gradient(135deg, ${GOLD}, ${GOLD}bb)`, color: "oklch(0.1 0.01 65)" }}
+            >
+              <MessageCircle size={12} fill="currentColor" />
+              {simulating ? "Verifying..." : "Link Discord Account"}
+              <ChevronRight className="size-3" />
+            </button>
           </div>
         </div>
       </div>
