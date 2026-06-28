@@ -33,11 +33,11 @@ export function LoginForm() {
     setForgotSuccess("")
     setIsSubmittingForgot(true)
     try {
-      const response = await authService.forgotPassword(forgotEmail)
-      setForgotSuccess(response.message || "Reset link has been sent to your email.")
+      await authService.forgotPassword(forgotEmail)
+      setForgotSuccess(t("resetLinkSent"))
       setForgotEmail("")
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : "Failed to request password reset link."
+      const errMsg = err instanceof Error ? err.message : t("resetLinkFailed")
       setForgotError(errMsg)
     } finally {
       setIsSubmittingForgot(false)
@@ -74,8 +74,8 @@ export function LoginForm() {
     return (
       <form onSubmit={handleForgotSubmit} className="flex flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Forgot Password</h2>
-          <p className="text-xs text-muted-foreground">{"Enter your email address and we'll send you a link to reset your password."}</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground">{t("forgotPasswordTitle")}</h2>
+          <p className="text-xs text-muted-foreground">{t("forgotPasswordDesc")}</p>
         </div>
 
         {forgotError && (
@@ -108,7 +108,7 @@ export function LoginForm() {
 
           <Field>
             <Button type="submit" className="w-full h-9" disabled={isSubmittingForgot}>
-              {isSubmittingForgot ? "Sending..." : "Send Reset Link"}
+              {isSubmittingForgot ? t("sending") : t("sendResetLink")}
             </Button>
           </Field>
 
@@ -124,7 +124,7 @@ export function LoginForm() {
               }}
               disabled={isSubmittingForgot}
             >
-              Back to Login
+              {t("backToLogin")}
             </Button>
           </Field>
         </FieldGroup>
@@ -136,12 +136,12 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {isSuspendedError && (
         <div className="p-3 text-xs bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 rounded-md font-medium">
-          Your account has been suspended by an administrator. Please contact support.
+          {t("accountSuspended")}
         </div>
       )}
       {isDeletedError && (
         <div className="p-3 text-xs bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 rounded-md font-medium">
-          Your account no longer exists or was deleted.
+          {t("accountDeleted")}
         </div>
       )}
       {displayApiError && (
@@ -204,7 +204,7 @@ export function LoginForm() {
 
         <Field>
           <Button type="submit" className="w-full h-9" disabled={isLoading}>
-            {isLoading ? "Logging in..." : t("login")}
+            {isLoading ? t("loggingIn") : t("login")}
           </Button>
         </Field>
 

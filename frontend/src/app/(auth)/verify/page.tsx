@@ -57,6 +57,18 @@ export default function VerifyEmailPage() {
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "Invalid or expired verification code."
       setError(errMsg)
+
+      // Gracefully handle case where email is already verified
+      if (errMsg.toLowerCase().includes("already verified")) {
+        setSuccess("Email is already verified! Redirecting to dashboard...")
+        setError("")
+        if (user) {
+          setUser({ ...user, verified: true })
+        }
+        setTimeout(() => {
+          router.push("/portal/overview")
+        }, 2000)
+      }
     } finally {
       setIsLoading(false)
     }

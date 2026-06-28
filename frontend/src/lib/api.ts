@@ -114,7 +114,13 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       if (response.status === 401 || response.status === 403) {
         tokenManager.clearToken()
 
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+        const isProtectedRoute = 
+          pathname.startsWith('/portal') || 
+          pathname.startsWith('/studio') || 
+          pathname.startsWith('/verify')
+
+        if (typeof window !== 'undefined' && isProtectedRoute) {
           let reason = 'expired'
           if (response.status === 403 || msg.includes('suspend')) {
             reason = 'suspended'
