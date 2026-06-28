@@ -1,0 +1,249 @@
+/**
+ * Auth Controller Layer
+ * Handles HTTP requests and responses for authentication
+ */
+
+const authService = require('./auth.service');
+const logger = require('../../config/logger');
+const { AppError } = require('../../middleware/errorHandler.middleware');
+
+// Cookie options helper - consistent across all auth endpoints
+function getAuthCookieOptions(env) {
+  const isProduction = env.nodeEnv === 'production';
+  return {
+    httpOnly: true,           // Prevent XSS - not readable by JS (intentional)
+    secure: isProduction,     // HTTPS only in prod, HTTP ok in dev
+    sameSite: isProduction ? 'strict' : 'lax', // 'lax' allows cross-port on localhost
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+    path: '/',
+  };
+}
+
+class AuthController {
+  /**
+   * Register new user
+   * POST /v1/auth/register
+   */
+  async register(req, res, next) {
+    try {
+      const userData = req.body;
+      const result = await authService.register(userData);
+      const { token } = result;
+      const env = require('../../config/env');
+
+      res.cookie('auth_token', token, getAuthCookieOptions(env));
+
+      res.status(201).json({
+        status: 'success',
+        statusCode: 201,
+        message: 'User registered successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  /**
+   * Login user
+   * POST /v1/auth/login
+   */
+  async login(req, res, next) {
+    try {
+      const credentials = req.body;
+      const result = await authService.login(credentials);
+      const { token } = result;
+      const env = require('../../config/env');
+
+      res.cookie('auth_token', token, getAuthCookieOptions(env));
+
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: 'Login successful',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  /**
+   * Get current user profile
+   * GET /v1/auth/profile
+   */
+  async getProfile(req, res, next) {
+    try {
+      const userId = req.user.id; // From auth middleware
+      const env = require('../../config/env');
+      const { user, token } = await authService.getProfile(userId);
+
+      // Re-fresh the httpOnly cookie so the frontend can persist the JWT
+      // for WebSocket sub-protocol authentication
+      res.cookie('auth_token', token, getAuthCookieOptions(env));
+
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: 'Profile retrieved successfully',
+        data: { user, token },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Redirect to Discord OAuth2 URL
+   * GET /v1/auth/discord
+   */
+  async discordRedirect(req, res, next) {
+    try {
+      const env = require('../../config/env');
+      const crypto = require('crypto');
+      const { getRedis } = require('../../config/redis');
+      
+      const clientId = env.discord.clientId;
+      const redirectUri = encodeURIComponent(env.discord.redirectUri);
+      
+      const state = crypto.randomBytes(32).toString('hex');
+      
+      const redis = getRedis();
+      if (redis) {
+        await redis.set(`discord_state:${state}`, 'valid', { ex: 600 });
+      } else {
+        // SECURITY: Fail closed - never bypass state validation. CSRF protection
+        // is critical; degraded service is preferable to a vulnerable one.
+        logger.error('Auth:Discord', 'Redis unavailable - Discord login disabled (fail-closed)');
+        throw new AppError('Discord login temporarily unavailable. Please try again later.', 503);
+      }
+      
+      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20email&state=${state}`;
+      
+      res.redirect(discordAuthUrl);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Handle Discord OAuth2 Callback
+   * GET /v1/auth/discord/callback
+   */
+  async discordCallback(req, res, next) {
+    try {
+      const { code, state } = req.query;
+      const env = require('../../config/env');
+      const { getRedis } = require('../../config/redis');
+      
+      if (!code) {
+        return res.redirect(`${env.frontendUrl}/login?error=discord_code_missing`);
+      }
+      
+      const redis = getRedis();
+      if (!redis) {
+        // SECURITY: Fail closed - never bypass state validation. If Redis went down
+        // between redirect and callback, reject the request rather than skip CSRF check.
+        logger.error('Auth:Discord:Callback', 'Redis unavailable - OAuth callback rejected (fail-closed)');
+        return res.status(503).json({ status: 'error', message: 'Authentication service temporarily unavailable' });
+      }
+
+      if (!state) {
+        return res.status(403).json({ status: 'error', message: 'Missing OAuth state parameter' });
+      }
+
+      const stateKey = `discord_state:${state}`;
+      const isValid = await redis.get(stateKey);
+
+      if (!isValid) {
+        return res.status(403).json({ status: 'error', message: 'Invalid or expired OAuth state' });
+      }
+
+      await redis.del(stateKey);
+      
+      const { token } = await authService.discordLogin(code);
+      
+      res.cookie('auth_token', token, getAuthCookieOptions(env));
+      
+      res.redirect(`${env.frontendUrl}/callback`);
+    } catch (error) {
+      const env = require('../../config/env');
+      logger.error('Auth:Discord', 'OAuth callback error', { error: error.message });
+      res.redirect(`${env.frontendUrl}/login?error=${encodeURIComponent(error.message || 'discord_auth_failed')}`);
+    }
+  }
+
+  /**
+   * Logout user - clear auth cookie
+   * POST /v1/auth/logout
+   */
+  async logout(req, res, next) {
+    try {
+      const env = require('../../config/env');
+      res.clearCookie('auth_token', {
+        httpOnly: true,
+        secure: env.nodeEnv === 'production',
+        sameSite: env.nodeEnv === 'production' ? 'strict' : 'lax',
+        path: '/',
+      });
+      
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: 'Logged out successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Send email verification code
+   * POST /v1/auth/send-verification
+   */
+  async sendVerification(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const result = await authService.sendVerificationCode(userId);
+
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Verify email verification code
+   * POST /v1/auth/verify-email
+   */
+  async verifyEmail(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { code } = req.body;
+
+      if (!code) {
+        return res.status(400).json({
+          status: 'error',
+          statusCode: 400,
+          message: 'Verification code is required',
+        });
+      }
+
+      const result = await authService.verifyEmailCode(userId, code);
+
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+module.exports = new AuthController();

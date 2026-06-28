@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "src/app/layout.tsx",
+    "src/app/*/layout.tsx",
+    "src/app/*/page.tsx",
+    "src/app/*/*/page.tsx",
+    "src/app/*/*/*/page.tsx",
+    "next.config.js",
+    "tailwind.config.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx,js,jsx}"],
+  "ignore": [
+    "node_modules/**",
+    ".next/**",
+    "public/r/**",
+    "dist/**",
+    ".git/**"
+  ],
+  "ignoreBinaries": ["next"],
+  "ignoreDependencies": []
+}

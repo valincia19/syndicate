@@ -1,0 +1,29 @@
+# VALINC SYNDICATE - AI crawler policy
+# Allow AI search agents to index & cite content
+# Block training-only crawlers (CCBot)
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: *
+Allow: /
+
+Sitemap: https://valincsyndicate.com/sitemap.xml

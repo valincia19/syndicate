@@ -1,0 +1,20 @@
+# Monorepo Root GitIgnore
+
+# Node modules
+**/node_modules/
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Next.js & Build outputs
+**/.next/
+**/build/
+**/dist/
+backend/crypto_logos/
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db

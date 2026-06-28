@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syndicate Pulse - VALINC SYNDICATE</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Poppins', sans-serif; background: #FAFAF9; color: #1a1a1a; display: flex; min-height: 100vh; }
+
+  #sidebar {
+    width: 320px; min-width: 320px; background: #FFFFFF; border-right: 1px solid #E5E5E5;
+    display: flex; flex-direction: column; overflow-y: auto; padding: 0;
+  }
+
+  .sidebar-header {
+    padding: 20px 24px; border-bottom: 1px solid #E5E5E5;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  .sidebar-header h1 { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; color: #fff; }
+  .sidebar-header p { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+
+  .control-section { padding: 16px 24px; border-bottom: 1px solid #F0F0F0; }
+  .control-section h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 12px; }
+
+  .seed-display {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #F5F5F5; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;
+  }
+  .seed-display .label { font-size: 11px; color: #999; }
+  .seed-display .value { font-size: 18px; font-weight: 600; font-family: 'Lora', serif; color: #333; }
+
+  .btn-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .btn {
+    flex: 1; padding: 8px 12px; border: 1px solid #DDD; border-radius: 6px;
+    background: #FFF; font-family: 'Poppins', sans-serif; font-size: 12px;
+    font-weight: 500; cursor: pointer; transition: all 0.15s; color: #333;
+  }
+  .btn:hover { background: #F5F5F5; border-color: #BBB; }
+  .btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff; border: none;
+  }
+  .btn.primary:hover { opacity: 0.9; }
+
+  .jump-row { display: flex; gap: 6px; }
+  .jump-row input {
+    flex: 1; padding: 8px 12px; border: 1px solid #DDD; border-radius: 6px;
+    font-family: 'Poppins', sans-serif; font-size: 12px; outline: none;
+  }
+  .jump-row input:focus { border-color: #667eea; }
+
+  .control-group { margin-bottom: 14px; }
+  .control-group label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: #555; margin-bottom: 6px; }
+  .control-group .value-display { color: #667eea; font-weight: 600; }
+  .control-group input[type="range"] {
+    width: 100%; height: 4px; -webkit-appearance: none; background: #E5E5E5;
+    border-radius: 2px; outline: none;
+  }
+  .control-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer;
+  }
+
+  #canvas-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #FAFAF9; }
+  #canvas-container canvas { max-width: 100%; max-height: 100vh; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sidebar-header">
+    <h1>Syndicate Pulse</h1>
+    <p>VALINC SYNDICATE - Generative Art</p>
+  </div>
+
+  <div class="control-section">
+    <h3>Seed</h3>
+    <div class="seed-display">
+      <span class="label">Current Seed</span>
+      <span class="value" id="seed-value">12345</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="prevSeed()">← Prev</button>
+      <button class="btn" onclick="nextSeed()">Next →</button>
+      <button class="btn primary" onclick="randomSeed()">Random</button>
+    </div>
+    <div class="jump-row">
+      <input type="number" id="jump-input" placeholder="Jump to seed..." min="1">
+      <button class="btn" onclick="jumpSeed()">Go</button>
+    </div>
+  </div>
+
+  <div class="control-section">
+    <h3>Parameters</h3>
+    <div class="control-group">
+      <label>Particle Count <span class="value-display" id="particleCount-value">800</span></label>
+      <input type="range" id="particleCount" min="100" max="2000" step="50" value="800" oninput="updateParam('particleCount', this.value)">
+    </div>
+    <div class="control-group">
+      <label>Noise Scale <span class="value-display" id="noiseScale-value">0.003</span></label>
+      <input type="range" id="noiseScale" min="0.001" max="0.01" step="0.001" value="0.003" oninput="updateParam('noiseScale', this.value)">
+    </div>
+    <div class="control-group">
+      <label>Speed <span class="value-display" id="speed-value">1.5</span></label>
+      <input type="range" id="speed" min="0.5" max="4" step="0.1" value="1.5" oninput="updateParam('speed', this.value)">
+    </div>
+    <div class="control-group">
+      <label>Node Count <span class="value-display" id="nodeCount-value">12</span></label>
+      <input type="range" id="nodeCount" min="3" max="30" step="1" value="12" oninput="updateParam('nodeCount', this.value)">
+    </div>
+    <div class="control-group">
+      <label>Connection Radius <span class="value-display" id="connectionRadius-value">150</span></label>
+      <input type="range" id="connectionRadius" min="50" max="400" step="10" value="150" oninput="updateParam('connectionRadius', this.value)">
+    </div>
+    <div class="control-group">
+      <label>Pulse Intensity <span class="value-display" id="pulseIntensity-value">0.6</span></label>
+      <input type="range" id="pulseIntensity" min="0.1" max="1" step="0.05" value="0.6" oninput="updateParam('pulseIntensity', this.value)">
+    </div>
+    <div class="control-group">
+      <label>Trail Length <span class="value-display" id="trailLength-value">15</span></label>
+      <input type="range" id="trailLength" min="3" max="40" step="1" value="15" oninput="updateParam('trailLength', this.value)">
+    </div>
+  </div>
+
+  <div class="control-section">
+    <h3>Actions</h3>
+    <div class="btn-row">
+      <button class="btn primary" onclick="regenerate()">Regenerate</button>
+      <button class="btn" onclick="resetParams()">Reset</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="downloadPNG()">Download PNG</button>
+    </div>
+  </div>
+</div>
+
+<div id="canvas-container"></div>
+
+<script>
+let currentSeed = 12345;
+let particles = [];
+let nodes = [];
+let pg;
+
+let params = {
+  particleCount: 800,
+  noiseScale: 0.003,
+  speed: 1.5,
+  nodeCount: 12,
+  connectionRadius: 150,
+  pulseIntensity: 0.6,
+  trailLength: 15,
+};
+
+const defaults = { ...params };
+
+function setup() {
+  let canvas = createCanvas(1200, 1200);
+  canvas.parent('canvas-container');
+  pg = createGraphics(1200, 1200);
+  pg.colorMode(HSB, 360, 100, 100, 100);
+  colorMode(HSB, 360, 100, 100, 100);
+  initSystem();
+}
+
+function initSystem() {
+  randomSeed(currentSeed);
+  noiseSeed(currentSeed);
+
+  nodes = [];
+  for (let i = 0; i < params.nodeCount; i++) {
+    nodes.push({
+      x: random(200, 1000),
+      y: random(200, 1000),
+      vx: random(-0.3, 0.3),
+      vy: random(-0.3, 0.3),
+      phase: random(TWO_PI),
+      freq: random(0.005, 0.02),
+      size: random(8, 20),
+    });
+  }
+
+  particles = [];
+  for (let i = 0; i < params.particleCount; i++) {
+    particles.push(createParticle());
+  }
+
+  pg.clear();
+}
+
+function createParticle() {
+  let edge = floor(random(4));
+  let x, y;
+  switch (edge) {
+    case 0: x = random(1200); y = -10; break;
+    case 1: x = random(1200); y = 1210; break;
+    case 2: x = -10; y = random(1200); break;
+    default: x = 1210; y = random(1200); break;
+  }
+  return {
+    x, y, age: 0, maxAge: random(150, 350),
+    trail: [], speed: random(0.5, 1.5),
+  };
+}
+
+function draw() {
+  background(0, 0, 5);
+
+  let t = frameCount * 0.01;
+
+  for (let node of nodes) {
+    node.phase += node.freq;
+    node.x += node.vx + sin(t + node.phase) * 0.5;
+    node.y += node.vy + cos(t + node.phase * 1.3) * 0.5;
+    node.x = constrain(node.x, 100, 1100);
+    node.y = constrain(node.y, 100, 1100);
+  }
+
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      let d = dist(nodes[i].x, nodes[i].y, nodes[j].x, nodes[j].y);
+      if (d < params.connectionRadius) {
+        let alpha = map(d, 0, params.connectionRadius, 30, 0) * params.pulseIntensity;
+        let pulse = (sin(t * 3 + nodes[i].phase + nodes[j].phase) + 1) * 0.5;
+        stroke(200, 60, 80, alpha * pulse);
+        strokeWeight(1);
+        line(nodes[i].x, nodes[i].y, nodes[j].x, nodes[j].y);
+      }
+    }
+  }
+
+  for (let node of nodes) {
+    let pulse = (sin(t * 4 + node.phase) + 1) * 0.5;
+    let s = node.size * (1 + pulse * 0.3 * params.pulseIntensity);
+
+    noStroke();
+    for (let r = s * 3; r > 0; r -= 2) {
+      fill(200, 50, 90, map(r, 0, s * 3, 8, 0) * params.pulseIntensity);
+      ellipse(node.x, node.y, r, r);
+    }
+    fill(200, 30, 100, 80);
+    ellipse(node.x, node.y, s, s);
+  }
+
+  for (let p of particles) {
+    let nVal = noise(p.x * params.noiseScale, p.y * params.noiseScale, t * 0.5);
+    let angle = nVal * TWO_PI * 4;
+
+    let nearestNode = null;
+    let nearestDist = Infinity;
+    for (let node of nodes) {
+      let d = dist(p.x, p.y, node.x, node.y);
+      if (d < nearestDist) { nearestDist = d; nearestNode = node; }
+    }
+
+    if (nearestNode && nearestDist < params.connectionRadius * 1.5) {
+      let toNode = atan2(nearestNode.y - p.y, nearestNode.x - p.x);
+      let blend = map(nearestDist, 0, params.connectionRadius * 1.5, 0.3, 0);
+      angle = lerp(angle, toNode, blend);
+    }
+
+    p.x += cos(angle) * p.speed * params.speed;
+    p.y += sin(angle) * p.speed * params.speed;
+    p.age++;
+
+    p.trail.push({ x: p.x, y: p.y });
+    if (p.trail.length > params.trailLength) p.trail.shift();
+
+    let lifeRatio = p.age / p.maxAge;
+    let alpha = sin(lifeRatio * PI) * 50 * params.pulseIntensity;
+
+    for (let i = 1; i < p.trail.length; i++) {
+      let t1 = p.trail[i - 1];
+      let t2 = p.trail[i];
+      let trailAlpha = (i / p.trail.length) * alpha * 0.5;
+
+      let hue;
+      if (nearestDist < 80) {
+        hue = 280;
+      } else if (nearestDist < 200) {
+        hue = lerp(200, 260, map(nearestDist, 80, 200, 0, 1));
+      } else {
+        hue = 200;
+      }
+
+      stroke(hue, 70, 90, trailAlpha);
+      strokeWeight(0.8);
+      line(t1.x, t1.y, t2.x, t2.y);
+    }
+
+    noStroke();
+    let hue = nearestDist < 80 ? 280 : nearestDist < 200 ? lerp(200, 260, map(nearestDist, 80, 200, 0, 1)) : 200;
+    fill(hue, 60, 100, alpha);
+    ellipse(p.x, p.y, 2, 2);
+
+    if (p.age > p.maxAge || p.x < -20 || p.x > 1220 || p.y < -20 || p.y > 1220) {
+      Object.assign(p, createParticle());
+    }
+  }
+
+  for (let i = 0; i < particles.length - params.particleCount; i++) {
+    particles.pop();
+  }
+  while (particles.length < params.particleCount) {
+    particles.push(createParticle());
+  }
+}
+
+function updateParam(name, value) {
+  params[name] = parseFloat(value);
+  document.getElementById(name + '-value').textContent = value;
+  if (name === 'particleCount' || name === 'nodeCount') {
+    initSystem();
+  }
+}
+
+function regenerate() { initSystem(); }
+function resetParams() {
+  params = { ...defaults };
+  for (let key in params) {
+    let el = document.getElementById(key);
+    if (el) { el.value = params[key]; document.getElementById(key + '-value').textContent = params[key]; }
+  }
+  initSystem();
+}
+
+function prevSeed() { currentSeed--; document.getElementById('seed-value').textContent = currentSeed; initSystem(); }
+function nextSeed() { currentSeed++; document.getElementById('seed-value').textContent = currentSeed; initSystem(); }
+function randomSeedVal() { return floor(random(1, 999999)); }
+function randomSeed() { currentSeed = randomSeedVal(); document.getElementById('seed-value').textContent = currentSeed; initSystem(); }
+function jumpSeed() {
+  let v = parseInt(document.getElementById('jump-input').value);
+  if (v > 0) { currentSeed = v; document.getElementById('seed-value').textContent = currentSeed; initSystem(); }
+}
+function downloadPNG() { saveCanvas('syndicate-pulse-' + currentSeed, 'png'); }
+</script>
+</body>
+</html>

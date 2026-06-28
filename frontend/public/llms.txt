@@ -1,0 +1,27 @@
+# VALINC SYNDICATE
+
+VALINC SYNDICATE is a Roblox scripting platform offering premium LUA execution with undetected Byfron/Hyperion anti-cheat bypass. Access is gated through a Discord-linked whitelist system - no manual keys for premium members.
+
+## Key pages
+
+- Landing page: https://valincsyndicate.com
+- Pricing & plans: https://valincsyndicate.com/#pricing
+- Documentation: https://valincsyndicate.com/portal
+- About: https://valincsyndicate.com/about
+- Supported games: https://valincsyndicate.com/games
+- Supported executors: https://valincsyndicate.com/executors
+- Discord: https://discord.gg/valincsyndicate
+
+## What we offer
+
+- **Premium script hub** - game-specific scripts for Blox Fruits, Pet Simulator 99, BedWars, and 27+ other Roblox titles
+- **Discord whitelist** - link Discord account for instant keyless access; roles sync automatically
+- **UI Library** - draggable windows, custom notifications, fluent animations, dark/light theme engine
+- **Multi-executor support** - Synapse Z, Wave, Wave Lite, Solara, Celery, Macsploit, Foxzy, Potasium, Seliware
+- **3-tier pricing** - Free ($0, 7-day key system), Premium ($2/mo, keyless, 5 HWID slots), Pro ($6/3mo, 12 slots, priority support)
+- **Cloud CDN** - instant script patches when Roblox updates; no manual re-downloads
+- **40k+ active whitelists**, 180+ scripts shipped, 99.97% edge uptime (90d)
+
+## Who runs it
+
+Three people: Valincia Eunha (founder, lead engineer), Sykoerzzz (community & marketing), Choco (support).
