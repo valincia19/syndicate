@@ -5,19 +5,39 @@
 
 const cors = require('cors');
 const env = require('../config/env');
+const logger = require('../config/logger');
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // If no Origin header (same-origin, server-to-server, or standard browser GET navigation like OAuth links)
+    // If no Origin header (same-origin, server-to-server, curl, or standard browser GET navigation)
     if (!origin) {
       return callback(null, true);
     }
     
-    if (env.allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS policy'));
+    // Normalize origin by removing trailing slashes
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+    
+    // 1. Check exact match in allowedOrigins (normalized)
+    const allowed = env.allowedOrigins.some(o => o.replace(/\/+$/, '') === normalizedOrigin);
+    if (allowed) {
+      return callback(null, true);
     }
+
+    // 2. Dynamic subdomain check based on cookieDomain (e.g. .vinzhub.com)
+    if (env.cookieDomain) {
+      const cleanDomain = env.cookieDomain.startsWith('.') ? env.cookieDomain.slice(1) : env.cookieDomain;
+      try {
+        const url = new URL(normalizedOrigin);
+        if (url.hostname === cleanDomain || url.hostname.endsWith('.' + cleanDomain)) {
+          return callback(null, true);
+        }
+      } catch (e) {
+        // ignore URL parse errors
+      }
+    }
+    
+    logger.warn('CORS', `Blocked request from origin: ${origin}`);
+    callback(null, false);
   },
   credentials: true, // Allow cookies and authorization headers
   optionsSuccessStatus: 200,
