@@ -55,7 +55,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://localhost:5000
+        - NEXT_PUBLIC_API_URL=https://api.vinzhub.com
+        - INTERNAL_BACKEND_URL=http://valinc-backend:5000
     container_name: valinc-frontend
     ports:
       - "3000:3000"

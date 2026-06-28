@@ -8,19 +8,24 @@ const logger = require('../../config/logger');
 const { AppError } = require('../../middleware/errorHandler.middleware');
 
 // Cookie options helper - consistent across all auth endpoints
+// Logic: jika COOKIE_DOMAIN di-set (production), anggap HTTPS dan pakai Secure flag.
+// Ini memutus ketergantungan pada NODE_ENV yang sering lupa diupdate.
 function getAuthCookieOptions(env) {
-  const isProduction = env.nodeEnv === 'production';
-  const sameSiteMode = env.cookieSameSite ? env.cookieSameSite : 'lax';
-  
+  const hasProductionDomain = !!(env.cookieDomain && !env.cookieDomain.includes('localhost'));
+  const isProduction = env.nodeEnv === 'production' || hasProductionDomain;
+  const sameSiteMode = env.cookieSameSite || (isProduction ? 'none' : 'lax');
+  // SameSite=None WAJIB Secure=true atau browser akan drop cookie
+  const needsSecure = sameSiteMode.toLowerCase() === 'none';
+
   const options = {
-    httpOnly: true,           // Prevent XSS - not readable by JS (intentional)
-    secure: isProduction,     // HTTPS only in prod, HTTP ok in dev
-    sameSite: sameSiteMode,   // Support custom sameSite settings (e.g. 'none' for cross-site fetch)
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+    httpOnly: true,
+    secure: isProduction || needsSecure,
+    sameSite: sameSiteMode,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/',
   };
 
-  if (isProduction && env.cookieDomain) {
+  if (env.cookieDomain) {
     options.domain = env.cookieDomain;
   }
 
