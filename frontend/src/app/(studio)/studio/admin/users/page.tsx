@@ -8,6 +8,7 @@ import {
   Search, Loader2, Shield, ShieldCheck, Wrench, Crown,
   User as UserIcon, X, Mail, MessageCircle, Ban
 } from "lucide-react"
+import { getAvatarUrl } from "@/lib/utils"
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -263,7 +264,7 @@ export default function AdminUsersPage() {
                         <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold bg-muted border border-border shrink-0">
                           {u.avatar ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={u.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                            <img src={getAvatarUrl(u.avatar, u.email)} alt="" className="w-full h-full rounded-full object-cover" />
                           ) : (
                             u.name.charAt(0).toUpperCase()
                           )}

@@ -22,6 +22,7 @@ import {
   Crown,
   ShieldCheck
 } from 'lucide-react'
+import { getAvatarUrl } from '@/lib/utils'
 
 type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 
@@ -400,7 +401,7 @@ export default function StaffTicketDetailPage() {
                   {msg.sender_avatar && msg.sender_avatar !== 'null' && msg.sender_avatar !== 'undefined' ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={msg.sender_avatar}
+                      src={getAvatarUrl(msg.sender_avatar, msg.sender_username)}
                       alt={msg.sender_username || 'User'}
                       className="w-full h-full object-cover"
                     />

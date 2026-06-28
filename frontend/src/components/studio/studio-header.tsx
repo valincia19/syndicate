@@ -8,6 +8,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { useTheme } from "@/hooks/use-theme"
 import { useAuth } from "@/context/auth-context"
+import { getAvatarUrl } from "@/lib/utils"
 
 interface StudioHeaderProps {
   userRole: string
@@ -158,7 +159,7 @@ export function StudioHeader({ userRole }: StudioHeaderProps) {
               {user?.avatar && user.avatar !== "null" && user.avatar !== "undefined" && !avatarError ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img 
-                  src={user.avatar} 
+                  src={getAvatarUrl(user.avatar, user.email)} 
                   alt={user.username} 
                   className="h-full w-full object-cover" 
                   onError={() => setAvatarError(true)}

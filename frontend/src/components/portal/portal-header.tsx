@@ -10,6 +10,7 @@ import { useTheme } from "@/hooks/use-theme"
 import { useAuth } from "@/context/auth-context"
 import { usePortalMenuItems } from "./portal-sidebar"
 import { usePathname } from "next/navigation"
+import { getAvatarUrl } from "@/lib/utils"
 
 export function PortalHeader() {
   const pathname = usePathname()
@@ -85,7 +86,7 @@ export function PortalHeader() {
               {user?.avatar && user.avatar !== "null" && user.avatar !== "undefined" && !avatarError ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img 
-                  src={user.avatar} 
+                  src={getAvatarUrl(user.avatar, user.email)} 
                   alt={user.username} 
                   className="h-full w-full object-cover" 
                   onError={() => setAvatarError(true)}

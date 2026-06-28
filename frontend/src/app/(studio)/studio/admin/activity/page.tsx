@@ -12,6 +12,7 @@ import {
   ChevronLeft, ChevronRight, User, HelpCircle, HardDrive, Shield,
   Filter, SlidersHorizontal
 } from 'lucide-react'
+import { getAvatarUrl } from '@/lib/utils'
 
 interface ActivityLogDetails {
   path?: string
@@ -501,7 +502,7 @@ export default function AdminActivityPage() {
                         {/* User Avatar or Initials Badge */}
                         <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
                           {log.user_avatar ? (
-                            <Image src={log.user_avatar} alt={log.user_name || ''} width={28} height={28} className="w-full h-full object-cover" />
+                            <Image src={getAvatarUrl(log.user_avatar, log.user_email)} alt={log.user_name || ''} width={28} height={28} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[10px] font-bold font-mono text-primary">{userInitials}</span>
                           )}

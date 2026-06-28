@@ -11,6 +11,7 @@ import {
   Mail, MessageCircle, Ban, ChevronLeft, ChevronRight,
   Filter, Check
 } from 'lucide-react'
+import { getAvatarUrl } from '@/lib/utils'
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -561,7 +562,7 @@ export default function OwnerUsersPage() {
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold bg-muted border border-border shrink-0 select-none">
                             {u.avatar ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={u.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                              <img src={getAvatarUrl(u.avatar, u.email)} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (
                               u.name.charAt(0).toUpperCase()
                             )}
@@ -728,7 +729,7 @@ export default function OwnerUsersPage() {
               <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-muted border border-border shrink-0">
                 {editTarget.avatar ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={editTarget.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                  <img src={getAvatarUrl(editTarget.avatar, editTarget.email)} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
                   editTarget.name.charAt(0).toUpperCase()
                 )}

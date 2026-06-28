@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/components/providers/language-provider"
 import { useSidebar } from "@/components/ui/sidebar"
+import { getAvatarUrl } from "@/lib/utils"
 
 export function PortalProfileMenu() {
   const router = useRouter()
@@ -132,7 +133,7 @@ export function PortalProfileMenu() {
           <div className="h-9 w-9 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 rounded-full bg-muted border border-border/60 overflow-hidden flex items-center justify-center font-bold text-muted-foreground text-sm shrink-0 select-none">
             {user?.avatar && user.avatar !== "null" && user.avatar !== "undefined" && !avatarError ? (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" onError={() => setAvatarError(true)} />
+              <img src={getAvatarUrl(user.avatar, user.email)} alt={user.username} className="h-full w-full object-cover" onError={() => setAvatarError(true)} />
             ) : (
               user?.initials ?? "-"
             )}
