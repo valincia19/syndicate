@@ -58,6 +58,23 @@ function ScaledContainer({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(18, 18, 20, 0.6);
+          border-radius: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(63, 63, 70, 0.7);
+          border-radius: 6px;
+          border: 1px solid rgba(24, 24, 27, 0.8);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: oklch(0.78 0.14 65 / 0.8);
+        }
+      `}</style>
     </div>
   )
 }
@@ -184,7 +201,7 @@ function Hero1TerminalStream({ step }: { step: number }) {
   }, [step])
 
   return (
-    <div ref={containerRef} className="font-mono text-[11px] leading-5 h-full overflow-y-auto pr-2 scrollbar-none select-none">
+    <div ref={containerRef} className="font-mono text-[11px] leading-5 h-full overflow-y-auto pr-2 custom-scrollbar select-none">
       {hero1LogEntries.slice(0, step).map((line, i) => (
         <div key={i} className="truncate transition-colors duration-150" style={{ color: i === step - 1 ? GOLD : DIM }}>
           <span style={{ color: GOLD, opacity: 0.6 }}>{`${i + 1}`.padStart(2, "0")}</span>
@@ -417,7 +434,7 @@ function Hero2ThreatAlertFeed() {
   }, [])
 
   return (
-    <div className="space-y-3 flex-1 overflow-y-auto pr-1 select-none font-sans">
+    <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar select-none font-sans">
       {alerts.map((a) => (
         <div key={a.id} className="p-3 rounded-xl border border-zinc-800 bg-zinc-900/20 flex gap-3 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/40">
           <div className="flex-shrink-0 size-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mt-0.5">
@@ -854,7 +871,7 @@ export function Hero3Showcase() {
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">High-Activity Keys</span>
                   <Globe className="size-3.5 text-zinc-500" />
                 </div>
-                <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 font-mono">
+                <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 custom-scrollbar font-mono">
                   {hero3TopUsers.map((u) => (
                     <div key={u.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors bg-zinc-950/20 border border-zinc-900/40 hover:bg-zinc-900/20">
                       <span className="w-3 text-[9px] text-zinc-600">#{u.rank}</span>
@@ -982,9 +999,9 @@ export function Hero3Showcase() {
                   </div>
                   <span className="text-[9px] text-zinc-500">streaming</span>
                 </div>
-                <div className="space-y-1.5 flex-1 overflow-y-auto pr-1">
+                <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                   {logs.map((entry, i) => (
-                    <div key={i} className="flex items-center gap-3 rounded-lg px-2.5 py-1.5 text-[10px] bg-zinc-950/20 border border-zinc-900/40">
+                    <div key={i} className="flex items-center gap-3 rounded-lg px-2.5 py-1.5 text-[10px] bg-zinc-950/20 border border-zinc-900/40 hover:bg-zinc-900/20 transition-colors">
                       <span className="w-14 shrink-0 text-zinc-600 tabular-nums">{entry.time}</span>
                       <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${entry.status === "ok" ? "bg-emerald-500/50" : "bg-amber-500/50"}`} />
                       <span className={`shrink-0 font-bold ${entry.status === "ok" ? "text-zinc-400" : "text-amber-400"}`}>{entry.event}</span>
