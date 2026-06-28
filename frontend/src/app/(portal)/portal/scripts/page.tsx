@@ -610,7 +610,7 @@ export default function ScriptsPage() {
                         <span className="text-foreground/75 dark:text-[#abb2bf]">:</span>
                         <span className="text-sky-600 dark:text-[#61afef]">HttpGet</span>
                         <span className="text-foreground/75 dark:text-[#abb2bf]">(</span>
-                        <span className="text-emerald-700 dark:text-[#98c379]">&quot;{BASE_API}/v1/release/{selectedScriptForDetail.prefix}.lua?key=YOUR_KEY&quot;</span>
+                        <span className="text-emerald-700 dark:text-[#98c379]">&quot;{BASE_API}/v1/release/{selectedScriptForDetail.prefix}.lua&quot;</span>
                         <span className="text-foreground/75 dark:text-[#abb2bf] font-mono">))()</span>
                       </div>
                     </div>
