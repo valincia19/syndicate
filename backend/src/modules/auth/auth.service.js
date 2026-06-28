@@ -293,6 +293,8 @@ class AuthService {
         avatar: avatarUrl || user.avatar,
         verified: isVerified,
       });
+      // Invalidate user profile cache
+      await cacheUtility.del(`cache:user_profile:${user.id}`);
     } else {
       // Register new user automatically
       const randomPassword = crypto.randomBytes(32).toString('hex');
@@ -411,6 +413,9 @@ class AuthService {
 
     // Clear verification code from Redis
     await redis.del(`verify_code:${userId}`);
+
+    // Invalidate user profile cache so subsequent requests see verified status immediately
+    await cacheUtility.del(`cache:user_profile:${userId}`);
 
     return {
       message: 'Email verified successfully',
