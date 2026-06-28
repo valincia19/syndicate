@@ -400,7 +400,7 @@ class AuthService {
       throw new AppError('No verification code has been requested or code expired. Please request a new one.', 400);
     }
 
-    if (cachedCode !== code.trim()) {
+    if (String(cachedCode) !== code.trim()) {
       throw new AppError('Invalid verification code', 400);
     }
 

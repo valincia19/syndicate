@@ -27,6 +27,7 @@ const createPool = () => {
     max: env.database.connectionLimit,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+    options: `-c search_path=${SCHEMA} -c timezone=UTC`,
     ...sslConfig,
   });
   return pool;
@@ -41,12 +42,6 @@ const createSchema = async () => {
   } finally {
     client.release();
   }
-};
-
-const wrapPool = () => {
-  pool.on('connect', (client) => {
-    client.query(`SET search_path TO ${SCHEMA}; SET timezone TO 'UTC';`);
-  });
 };
 
 const testConnection = async () => {
@@ -84,7 +79,6 @@ const ensureUpdateTrigger = async () => {
 
 const connect = async () => {
   if (!pool) createPool();
-  wrapPool();
   await createSchema();
   await testConnection();
   await ensureUpdateTrigger();
