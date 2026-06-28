@@ -218,7 +218,7 @@ function PaymentContent() {
   const [extraHwidSlots, setExtraHwidSlots] = useState(0)
 
   // Auto-detect user's local currency via IP geolocation and browser fallback
-  const [detectedCurrency, setDetectedCurrency] = useState<string>('USD')
+  const [detectedCurrency, setDetectedCurrency] = useState<string>('IDR')
   useEffect(() => {
     let isMounted = true
     const detectAsync = async () => {

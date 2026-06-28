@@ -62,17 +62,15 @@ const CURRENCY_SYMBOLS: Record<string, { symbol: string; locale: string }> = {
 }
 
 function detectUserCurrency(): string {
-  if (typeof navigator === 'undefined') return 'USD'
+  if (typeof navigator === 'undefined') return 'IDR'
   try {
-    const locale = navigator.language || 'en-US'
-    const parts = locale.split('-')
-    const country = parts[parts.length - 1]?.toUpperCase()
-    if (country && COUNTRY_TO_CURRENCY[country]) return COUNTRY_TO_CURRENCY[country]
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
-    if (tz.startsWith('Asia/Jakarta') || tz.startsWith('Asia/Makassar') || tz.startsWith('Asia/Jayapura')) return 'IDR'
-    return 'USD'
+    if (tz.includes('Jakarta') || tz.includes('Makassar') || tz.includes('Jayapura') || tz.startsWith('Asia/')) return 'IDR'
+    const locale = navigator.language || ''
+    if (locale.toLowerCase().includes('id')) return 'IDR'
+    return 'IDR'
   } catch {
-    return 'USD'
+    return 'IDR'
   }
 }
 
@@ -92,7 +90,7 @@ export default function PricingSection() {
   const router = useRouter()
 
   const [pricesData, setPricesData] = useState<PlanPricesData | null>(null)
-  const [detectedCurrency, setDetectedCurrency] = useState<string>('USD')
+  const [detectedCurrency, setDetectedCurrency] = useState<string>('IDR')
 
   // Auto-detect currency
   useEffect(() => {
@@ -103,7 +101,7 @@ export default function PricingSection() {
     let isMounted = true
     const detectAsync = async () => {
       try {
-        const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) })
+        const res = await fetch('https://ip-api.com/json/?fields=countryCode,currency', { signal: AbortSignal.timeout(3000) })
         if (res.ok) {
           const data = await res.json()
           if (isMounted && data && data.currency) {
