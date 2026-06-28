@@ -51,8 +51,10 @@ class AuthController {
     try {
       const userData = req.body;
       const result = await authService.register(userData);
-      const { token } = result;
+      const { token, user } = result;
       const env = require('../../config/env');
+
+      logger.info('Auth:Register', `User registered successfully: email=${user.email} username=${user.username || 'N/A'} id=${user.id}`);
 
       res.cookie('auth_token', token, getAuthCookieOptions(env));
 
@@ -75,8 +77,10 @@ class AuthController {
     try {
       const credentials = req.body;
       const result = await authService.login(credentials);
-      const { token } = result;
+      const { token, user } = result;
       const env = require('../../config/env');
+
+      logger.info('Auth:Login', `User logged in successfully: email=${user.email} username=${user.username || 'N/A'} id=${user.id}`);
 
       res.cookie('auth_token', token, getAuthCookieOptions(env));
 
@@ -189,7 +193,8 @@ class AuthController {
 
       await redis.del(stateKey);
       
-      const { token } = await authService.discordLogin(code);
+      const { token, user } = await authService.discordLogin(code);
+      logger.info('Auth:Discord', `Discord OAuth login successful: email=${user?.email || 'N/A'} username=${user?.username || 'N/A'} id=${user?.id || 'N/A'}`);
       
       res.cookie('auth_token', token, getAuthCookieOptions(env));
       
