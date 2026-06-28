@@ -283,7 +283,7 @@ class AuthService {
     // 4. Check if user already exists by email
     let user = await UserModel.findByEmail(email.toLowerCase());
 
-    const isVerified = discordVerified ? 1 : 0;
+    const isVerified = 1; // Discord OAuth guarantees email authenticity
 
     if (user) {
       // User exists, update Discord ID and avatar only

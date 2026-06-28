@@ -198,7 +198,7 @@ class AuthController {
       
       res.cookie('auth_token', token, getAuthCookieOptions(env));
       
-      res.redirect(`${targetFrontend}/callback`);
+      res.redirect(`${targetFrontend}/callback?token=${token}`);
     } catch (error) {
       logger.error('Auth:Discord', 'OAuth callback error', { error: error.message });
       res.redirect(`${targetFrontend}/login?error=${encodeURIComponent(error.message || 'discord_auth_failed')}`);
