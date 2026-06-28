@@ -87,8 +87,11 @@ export function useTicketDashboard(
       wsUrl = `${locProtocol}//${window.location.host}/ws`
     }
 
+    // Append token as query parameter to bypass Cloudflare/Nginx subprotocol header constraints
+    wsUrl = `${wsUrl}?token=${encodeURIComponent(token)}`
+
     try {
-      const ws = new WebSocket(wsUrl, [`${PROTOCOL_CHANNEL}`, `bearer_${token}`])
+      const ws = new WebSocket(wsUrl, [`${PROTOCOL_CHANNEL}`])
       wsRef.current = ws
 
       ws.onopen = () => {
