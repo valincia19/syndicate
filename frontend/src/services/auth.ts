@@ -107,4 +107,11 @@ export const authService = {
   async resetPassword(token: string, newPassword: string): Promise<{ status: string; message: string }> {
     return api.post<{ status: string; message: string }>("/v1/auth/reset-password", { token, newPassword })
   },
+
+  /**
+   * Validate password reset token
+   */
+  async validateResetToken(token: string): Promise<{ status: string; message: string }> {
+    return api.get<{ status: string; message: string }>(`/v1/auth/reset-password/validate?token=${token}`)
+  },
 }

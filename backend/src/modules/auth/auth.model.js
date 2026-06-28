@@ -204,7 +204,7 @@ class UserModel {
     const pool = getPool();
     const ALLOWED_FIELDS = [
       'name', 'username', 'avatar', 'email',
-      'discord_id',
+      'password', 'discord_id',
       'role', 'verified', 'balance', 'suspended'
     ];
     const fields = Object.keys(updateData).filter(f => ALLOWED_FIELDS.includes(f));

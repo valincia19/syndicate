@@ -29,10 +29,15 @@ const resetPasswordSchema = z.object({
   newPassword: z.string().min(6, 'Password must be at least 6 characters').max(100),
 }).strict();
 
+const validateResetTokenSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+}).strict();
+
 module.exports = {
   registerSchema,
   loginSchema,
   verifyEmailSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  validateResetTokenSchema,
 };

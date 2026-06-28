@@ -498,6 +498,26 @@ class AuthService {
       message: 'Password has been reset successfully',
     };
   }
+
+  /**
+   * Validate password reset token existence
+   * @param {string} token
+   */
+  async validateResetToken(token) {
+    const redis = getRedis();
+    if (!redis) {
+      throw new AppError('Password recovery service temporarily unavailable', 503);
+    }
+
+    const userId = await redis.get(`password_reset:${token}`);
+    if (!userId) {
+      throw new AppError('Invalid or expired password reset token', 400);
+    }
+
+    return {
+      message: 'Token is valid',
+    };
+  }
 }
 
 module.exports = new AuthService();

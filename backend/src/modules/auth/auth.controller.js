@@ -280,6 +280,24 @@ class AuthController {
       next(error);
     }
   }
+
+  /**
+   * Validate password reset token
+   * GET /v1/auth/reset-password/validate
+   */
+  async validateResetToken(req, res, next) {
+    try {
+      const { token } = req.query;
+      const result = await authService.validateResetToken(token);
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new AuthController();
