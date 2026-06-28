@@ -174,7 +174,7 @@ export default function OverviewPage() {
             {t("portalOverview")}
           </h1>
           <p className="text-[11px] text-muted-foreground">
-            Identity: <span className="font-mono text-foreground font-bold">{user?.username ?? "Guest"}</span> - Access Node: <span className="font-mono text-primary font-bold">Premium Lifetime</span>
+            Identity: <span className="font-mono text-foreground font-bold">{user?.username || user?.name || user?.email || "Guest"}</span> - Access Node: <span className="font-mono text-primary font-bold uppercase">{user?.role ? `${user.role} Access` : "Premium Lifetime"}</span>
           </p>
         </div>
         <div className="flex items-center gap-1.5">
