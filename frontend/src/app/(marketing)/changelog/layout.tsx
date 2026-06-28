@@ -1,9 +1,14 @@
 import type { Metadata } from "next"
-import ChangelogPage from "../changelog/page"
 
 export const metadata: Metadata = {
   title: "Changelog",
   description: "Track real-time releases, updates, security improvements, and bug fixes for the VALINC SYNDICATE script hub and execution engine.",
 }
 
-export default ChangelogPage
+export default function ChangelogLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return children
+}

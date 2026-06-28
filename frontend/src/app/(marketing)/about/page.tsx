@@ -12,6 +12,7 @@
  *   Connect  - Platform links (Discord, docs)
  */
 
+import type { Metadata } from "next"
 import { Me } from "@/components/me"
 import { Journey } from "@/components/journey"
 import { CTA } from "@/components/create"
@@ -19,6 +20,11 @@ import { Connect } from "@/components/connect"
 import { Header } from "@/components/layout/header"
 import CTASection from "@/components/landing/cta-section"
 import FooterSection from "@/components/layout/footer"
+
+export const metadata: Metadata = {
+  title: "About Us",
+  description: "Meet the team and trace the history and milestones of VALINC SYNDICATE, the ultimate next-gen Roblox scripting engine.",
+}
 
 export default function AboutPage() {
   return (
