@@ -162,7 +162,15 @@ function authenticateUpgrade(req) {
  * @param {import('http').Server} server
  */
 function setupWebSocket(server) {
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({
+    noServer: true,
+    handleProtocols: (protocols) => {
+      if (protocols.includes(PROTOCOL_CHANNEL)) {
+        return PROTOCOL_CHANNEL;
+      }
+      return false;
+    }
+  });
 
   wssRegistry.set(wss);
 
