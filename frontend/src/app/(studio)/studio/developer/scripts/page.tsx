@@ -121,7 +121,7 @@ function ScriptsContent(): React.ReactNode {
     if (isRepairing) return
     setIsRepairing(true)
     try {
-      const res = await api.post<{ status: string; message: string; data: { repaired_scripts: number; repaired_folders: number } }>('/v1/scripts/repair-orphans')
+      const res = await api.post<{ status: string; message: string; data: { repaired_scripts: number; repaired_folders: number } }>('/v1/scripts/repair-orphans', {})
       logToConsole(`[SYSTEM] Diagnostic repair finished: ${res.data.repaired_scripts} files and ${res.data.repaired_folders} folders restored to root.`)
       await loadLevel(null)
       alert(`Diagnostic Fix Completed!\n\nRestored ${res.data.repaired_scripts} hidden files and ${res.data.repaired_folders} folders to Root level.`)
