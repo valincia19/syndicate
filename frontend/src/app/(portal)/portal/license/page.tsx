@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import { api } from "@/lib/api"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useLanguage } from "@/components/providers/language-provider"
 import {
   Key, Gift, Shield, Star, Crown, Loader2,
@@ -75,6 +76,7 @@ function Modal({ open, onClose, title, children }: { open: boolean; onClose: () 
 }
 
 export default function PortalLicensePage() {
+  const router = useRouter()
   const { t } = useLanguage()
   const tKey = (key: string) => t(key as Parameters<typeof t>[0])
   const [licenses, setLicenses] = useState<License[]>([])
@@ -337,6 +339,18 @@ export default function PortalLicensePage() {
 
                   {/* Status + Arrow */}
                   <div className="flex items-center gap-2.5 shrink-0">
+                    {((l.tier === 'premium' || l.tier === 'pro') && l.expires_at && (new Date(l.expires_at).getTime() - Date.now() <= 3 * 24 * 60 * 60 * 1000)) && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          router.push(`/portal/payment?plan=${l.tier}&renew=${l.id}`)
+                        }}
+                        className="px-2.5 py-1 text-[9px] font-bold font-mono rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 active:scale-95 transition-all cursor-pointer"
+                      >
+                        Renew
+                      </button>
+                    )}
                     {statusBadge(l.status)}
                     <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/20 group-hover:text-muted-foreground/60 transition-colors" />
                   </div>

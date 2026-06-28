@@ -246,6 +246,14 @@ export default function LicenseDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {((license.tier === 'premium' || license.tier === 'pro') && license.expires_at && (new Date(license.expires_at).getTime() - Date.now() <= 3 * 24 * 60 * 60 * 1000)) && (
+            <Link
+              href={`/portal/payment?plan=${license.tier}&renew=${license.id}`}
+              className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold font-mono rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-all cursor-pointer shrink-0"
+            >
+              Renew
+            </Link>
+          )}
           {statusBadge(license.status)}
           <button onClick={() => copyKey(license.license_key)}
             className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-mono border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer shrink-0">
