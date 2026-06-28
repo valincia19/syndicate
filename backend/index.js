@@ -486,6 +486,11 @@ app.get('/v1/bypass/settings', async (req, res, next) => {
   }
 });
 
+// Compatibility endpoint for legacy Roblox client scripts pinging heartbeat
+app.get('/heartbeat', async (req, res) => {
+  return res.status(200).json({ status: 'success', valid: true, message: 'Heartbeat acknowledged' });
+});
+
 app.use('/v1/auth', authRoutes);
 app.use('/v1/tickets', ticketRoutes);
 app.use('/v1/admin', adminRoutes);
