@@ -209,7 +209,9 @@ function setupWebSocket(server) {
     }
 
     // Rate limiting check on connection upgrade (anti-bruteforce)
-    const rateCheck = await checkWsUpgradeRate(remoteIp);
+    // ponytail: bypass rate limiting for localhost to prevent local dev loops
+    const isLocalhost = remoteIp === '::1' || remoteIp === '127.0.0.1' || remoteIp.endsWith('127.0.0.1');
+    const rateCheck = isLocalhost ? { allowed: true } : await checkWsUpgradeRate(remoteIp);
     if (!rateCheck.allowed) {
       logger.warn('WebSocket', 'Upgrade REJECTED - Rate limit exceeded', { ip: remoteIp });
       socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');

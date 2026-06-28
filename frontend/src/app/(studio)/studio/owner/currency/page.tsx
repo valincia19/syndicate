@@ -463,7 +463,6 @@ export default function OwnerCurrencyPage() {
                 <Loader2 className="animate-spin inline mr-2" />Loading...
               </td></tr>
             ) : currencies.map(c => {
-              const _isEditing = editing === c.currency_code
               const displayRate = Number(c.rate_to_idr)
 
               // Premium equivalent: 40000 IDR base price ÷ this currency's rate_to_idr

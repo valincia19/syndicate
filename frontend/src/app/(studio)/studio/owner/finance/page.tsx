@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/auth-context'
 import { api } from '@/lib/api'
-import { PieChart, Loader2, DollarSign, TrendingUp, TrendingDown } from 'lucide-react'
+import { PieChart, Loader2, TrendingUp, TrendingDown } from 'lucide-react'
 
 interface FinanceStats {
   totalRevenueUSD: number

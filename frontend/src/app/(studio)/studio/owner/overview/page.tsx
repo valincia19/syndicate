@@ -35,7 +35,7 @@ interface FinanceStats {
 interface ActivityLog {
   id: string
   action: string
-  details: Record<string, any> | null
+  details: Record<string, unknown> | null
   created_at: string
   user_name: string | null
   user_email: string | null
@@ -96,18 +96,19 @@ export default function OwnerOverviewPage() {
     return action.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
   }
 
-  const formatDetails = (action: string, details: Record<string, any> | null) => {
+  const formatDetails = (action: string, details: Record<string, unknown> | null) => {
     if (!details) return ''
+    const d = details as Record<string, string | undefined>
     if (action.includes('device') || action.includes('hwid')) {
-      return `Roblox user: ${details.roblox_username || 'N/A'}`
+      return `Roblox user: ${d.roblox_username || 'N/A'}`
     }
     if (action.includes('voucher')) {
-      return `Voucher: ${details.voucher_code || 'N/A'}`
+      return `Voucher: ${d.voucher_code || 'N/A'}`
     }
     if (action.includes('role')) {
-      return `Target: ${details.target_email || 'N/A'} -> ${details.role || 'N/A'}`
+      return `Target: ${d.target_email || 'N/A'} -> ${d.role || 'N/A'}`
     }
-    return details.error || details.errorMessage || 'System audit logged'
+    return d.error || d.errorMessage || 'System audit logged'
   }
 
   if (isLoading || !mounted || isLoadingData) {

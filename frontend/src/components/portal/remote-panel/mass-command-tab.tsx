@@ -17,7 +17,6 @@ import {
   XCircle,
 } from "lucide-react"
 import { MOCK_INSTANCES } from "./types"
-import type { BotInstance } from "./types"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

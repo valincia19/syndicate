@@ -56,7 +56,7 @@ export function ClientDate({
           break
       }
     }
-  } catch (e) {
+  } catch {
     formattedDate = "Error"
   }
 

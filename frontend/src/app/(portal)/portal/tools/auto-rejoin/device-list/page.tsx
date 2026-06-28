@@ -5,7 +5,7 @@ import { DEVICES, INITIAL_CLIENTS } from "@/components/portal/auto-rejoin/types"
 import DeviceListTab from "@/components/portal/auto-rejoin/device-list-tab"
 
 export default function DeviceListPage() {
-  const [selectedDevice, _setSelectedDevice] = useState(DEVICES[0].id)
+  const selectedDevice = DEVICES[0].id
   const [clients, setClients] = useState(INITIAL_CLIENTS)
   const [, setLogs] = useState<string[]>(["[07:15:02] Auto Rejoin Module Initialized."])
 

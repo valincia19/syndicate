@@ -202,9 +202,8 @@ export default function TicketDetailPage() {
         }
       })
     },
-    onError: (err) => {
+    onError: () => {
       // Silently handle in production; could toast but not critical
-      console.debug('[WS]', err)
     },
   })
 

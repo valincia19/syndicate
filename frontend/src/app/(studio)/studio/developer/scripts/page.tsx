@@ -11,8 +11,8 @@ import { useExplorerStore } from '@/stores/explorer-store'
 import type { ScriptData, FolderData, BreadcrumbItem, TreeNode } from '@/stores/explorer-store'
 import { VirtualTreeList } from '@/components/studio/explorer/virtual-tree'
 import {
-  FolderPlus, Home, Upload, Globe, FileCode, Loader2,
-  Activity, Code2, Terminal, ShieldAlert, ShieldCheck, AlertTriangle,
+  FolderPlus, Home, Upload, FileCode, Loader2,
+  Activity, Code2, Terminal, ShieldCheck, AlertTriangle,
   FilePlus, Wrench
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -48,19 +48,12 @@ function ScriptsContent(): React.ReactNode {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, isLoading } = useAuth()
-  const [ready, setReady] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [sidebarHeight, setSidebarHeight] = useState(400)
 
-  useEffect(() => {
-    setReady(true)
-  }, [])
-
   // ── Zustand store (shallow selectors) ──────────────────
   const store = useExplorerStore
-  const activeFileContent = useExplorerStore(s => s.activeFileContent)
   const loadingFile = useExplorerStore(s => s.loadingFile)
-  const selectedId = useExplorerStore(s => s.selectedId)
   const currentFolderId = useExplorerStore(s => s.currentFolderId)
   const breadcrumb = useExplorerStore(s => s.breadcrumb)
 
@@ -230,7 +223,7 @@ function ScriptsContent(): React.ReactNode {
   // ── Initial load ──────────────────────────────────────
   const hasInitialized = useRef(false)
   useEffect(() => {
-    if (!isLoading && ready && !hasInitialized.current) {
+    if (!isLoading && !hasInitialized.current) {
       if (!user || !['owner', 'developer'].includes(user.role)) {
         router.push('/studio'); return
       }
@@ -260,7 +253,7 @@ function ScriptsContent(): React.ReactNode {
       }
       init()
     }
-  }, [user, isLoading, ready, loadLevel, router])
+  }, [user, isLoading, loadLevel, router])
 
   // ── Tree actions ──────────────────────────────────────
   const handleToggle = useCallback(async (nodeId: string) => {
@@ -338,7 +331,7 @@ function ScriptsContent(): React.ReactNode {
   const scriptParam = searchParams.get('script')
   const autoOpenedRef = useRef<string | null>(null)
   useEffect(() => {
-    if (ready && scriptParam && autoOpenedRef.current !== scriptParam) {
+    if (scriptParam && autoOpenedRef.current !== scriptParam) {
       autoOpenedRef.current = scriptParam
       const openTargetScript = async () => {
         try {
@@ -365,7 +358,7 @@ function ScriptsContent(): React.ReactNode {
       }
       openTargetScript()
     }
-  }, [ready, scriptParam, handleSelect])
+  }, [scriptParam, handleSelect])
 
   const handleRename = useCallback(async (nodeId: string, newName: string) => {
     const node = store.getState().nodeMap[nodeId]

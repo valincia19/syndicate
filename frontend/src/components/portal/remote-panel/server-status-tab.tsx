@@ -4,7 +4,6 @@ import {
   Server,
   Activity,
   Cpu,
-  HardDrive,
   Wifi,
   Globe,
   CheckCircle,

@@ -16,7 +16,7 @@ import { List } from 'react-window'
 import type { RowComponentProps } from 'react-window'
 import {
   Folder, FolderOpen, FileCode, ChevronRight,
-  Loader2, Edit2, Trash2, Copy, Clipboard, Link, Globe, Clock, CheckCircle
+  Loader2, Edit2, Trash2, Copy, Clipboard, Link, Globe, Clock
 } from 'lucide-react'
 import { useExplorerStore } from '@/stores/explorer-store'
 import { ContextMenu, type ContextMenuAction } from './context-menu'

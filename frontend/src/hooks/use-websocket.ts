@@ -89,8 +89,6 @@ export function useTicketSocket(
 
     const token = tokenManager.getToken()
     if (!token) {
-      console.warn('[WS] No authentication token available - will retry when token appears')
-
       // Start polling for token (handles hydration delay / async Set-Cookie sync)
       if (!tokenWatchRef.current) {
         tokenWatchRef.current = setInterval(() => {
@@ -103,7 +101,6 @@ export function useTicketSocket(
           }
           const freshToken = tokenManager.getToken()
           if (freshToken) {
-            console.info('[WS] Token now available - connecting')
             if (tokenWatchRef.current) {
               clearInterval(tokenWatchRef.current)
               tokenWatchRef.current = null
@@ -116,7 +113,6 @@ export function useTicketSocket(
       onErrorRef.current?.('No authentication token available')
       return
     }
-    console.debug('[WS] Connecting', { ticketId, hasToken: !!token })
 
     // Determine WS URL from NEXT_PUBLIC_API_URL - ensures we connect to
     // the backend WebSocket server (port 5000) not the Next.js dev server (port 3000).
@@ -143,13 +139,11 @@ export function useTicketSocket(
       wsRef.current = ws
 
       ws.onopen = () => {
-        console.info('[WS] Connected successfully', { ticketId })
         attemptRef.current = 0 // Reset backoff on successful connection
         setStatus('connected')
 
         // Subscribe to the ticket
         ws.send(JSON.stringify({ type: 'subscribe', ticketId }))
-        console.debug('[WS] Subscribe sent', { ticketId })
 
         // Start client-side ping to detect dead connections early
         if (pingTimerRef.current) clearInterval(pingTimerRef.current)
@@ -213,7 +207,6 @@ export function useTicketSocket(
       }
 
       ws.onclose = (event: CloseEvent) => {
-        console.warn('[WS] Connection closed', { code: event.code, reason: event.reason, ticketId })
         // Clear ping interval
         if (pingTimerRef.current) {
           clearInterval(pingTimerRef.current)
@@ -224,7 +217,6 @@ export function useTicketSocket(
         if (!mountedRef.current || event.code === 1000) return
 
         if (attemptRef.current >= MAX_ATTEMPTS) {
-          console.warn('[WS] Max reconnect attempts reached. Setting offline.', { ticketId })
           setStatus('offline')
           return
         }

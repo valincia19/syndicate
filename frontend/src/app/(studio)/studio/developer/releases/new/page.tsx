@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
 import { useEffect, useState, Suspense, useCallback, useRef, useMemo } from 'react'
@@ -60,7 +61,7 @@ function NewReleaseContent() {
   const [restoredDraft, setRestoredDraft] = useState(false)
 
   // ── Auto-save draft to localStorage ──
-  const { saveNow, scheduleSave, clearDraft } = useFormDraft({
+  const { scheduleSave, clearDraft } = useFormDraft({
     key: 'release-new-draft',
     initialData: {
       name: '',
@@ -265,7 +266,7 @@ function NewReleaseContent() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [name, description, category, version, scriptId, scriptType, logoText, logoGradient, operationalStatus, publishStatus, gameId, gameInfo, gameError, isFetchingGame, features, extractGameId, clearDraft, router])
+  }, [name, description, category, version, scriptId, scriptType, logoText, logoGradient, operationalStatus, publishStatus, gameId, gameInfo, isFetchingGame, features, extractGameId, clearDraft, router])
 
   // ── Auth guard ──
   if (authLoading || !mounted) return (

@@ -237,7 +237,6 @@ export default function AdminVoucherPlanPage() {
                 const isNotYetActive = v.active_from ? new Date(v.active_from) > new Date() : false
                 const isExpired = v.expires_at ? new Date(v.expires_at) < new Date() : false
                 const isFullyClaimed = v.uses_count >= v.max_uses
-                const _isActive = !isNotYetActive && !isExpired && !isFullyClaimed
 
                 return (
                   <tr key={v.id} className="hover:bg-muted/5 transition-colors group">

@@ -89,10 +89,10 @@ export default function AdminOverviewPage() {
         return
       }
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching pattern
-      fetchStats()
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching pattern
-      fetchLogs()
+      Promise.resolve().then(() => {
+        fetchStats()
+        fetchLogs()
+      })
     }
   }, [user, isAuthLoading, mounted, router])
 

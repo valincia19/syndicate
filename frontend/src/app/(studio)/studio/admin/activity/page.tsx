@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+
 import Image from 'next/image'
 import { useAuth } from '@/context/auth-context'
 import { ClientDate } from '@/components/ui/client-date'
@@ -67,7 +67,7 @@ const ACTION_OPTIONS = [
 ]
 
 export default function AdminActivityPage() {
-  const _router = useRouter()
+
   const { user, isLoading: authLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
 

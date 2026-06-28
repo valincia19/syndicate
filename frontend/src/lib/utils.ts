@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getAvatarUrl(avatar: string | null | undefined, email?: string | null): string | null {
+export function getAvatarUrl(avatar: string | null | undefined): string | null {
   if (!avatar || avatar === "null" || avatar === "undefined") {
     return null
   }

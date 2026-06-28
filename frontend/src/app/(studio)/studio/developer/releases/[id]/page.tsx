@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
 import { useEffect, useState, Suspense, useCallback, useRef, useMemo } from 'react'
@@ -276,7 +277,7 @@ function EditReleaseContent() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [name, description, category, version, scriptId, scriptType, logoText, logoGradient, operationalStatus, gameId, features, gameInfo, releaseId, extractGameId, router])
+  }, [name, description, category, version, scriptId, scriptType, logoText, logoGradient, operationalStatus, publishStatus, gameId, features, gameInfo, releaseId, extractGameId, router])
 
   // ── Auth guard ──
   if (authLoading || !mounted) return (

@@ -14,6 +14,10 @@ import { tokenManager } from '@/lib/api'
  */
 
 const PROTOCOL_CHANNEL = 'ticket-ws.v1'
+// ponytail: default to 4s base delay for lazy reconnects to prevent rate-limit spamming
+const RECONNECT_BASE_MS = 4000
+const RECONNECT_MAX_MS = 30_000
+const MAX_ATTEMPTS = 5
 
 interface DashboardEvent {
   type: string
@@ -36,6 +40,8 @@ export function useTicketDashboard(
   const wsRef = useRef<WebSocket | null>(null)
   const mountedRef = useRef(true)
   const tokenWatchRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const attemptRef = useRef(0)
 
   const connectRef = useRef<() => void>(() => {})
 
@@ -43,12 +49,17 @@ export function useTicketDashboard(
     if (!mountedRef.current) return
 
     // Clean up existing
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current)
+      reconnectTimerRef.current = null
+    }
     if (wsRef.current) {
       wsRef.current.onopen = null
       wsRef.current.onmessage = null
       wsRef.current.onclose = null
       wsRef.current.onerror = null
       wsRef.current.close()
+      wsRef.current = null
     }
 
     const token = tokenManager.getToken()
@@ -95,6 +106,7 @@ export function useTicketDashboard(
       wsRef.current = ws
 
       ws.onopen = () => {
+        attemptRef.current = 0
         // Subscribe to the dashboard channel
         ws.send(JSON.stringify({ type: 'subscribe_dashboard' }))
       }
@@ -119,20 +131,38 @@ export function useTicketDashboard(
       ws.onclose = () => {
         // Don't reconnect if unmounted
         if (!mountedRef.current) return
-        // Retry after a delay
-        setTimeout(() => {
+
+        if (attemptRef.current >= MAX_ATTEMPTS) {
+          return
+        }
+
+        // ponytail: same backoff formula as useTicketSocket
+        const delay = Math.min(
+          RECONNECT_BASE_MS * Math.pow(2, attemptRef.current),
+          RECONNECT_MAX_MS
+        )
+        const jitter = delay * 0.25 * (Math.random() * 2 - 1)
+        const nextDelay = Math.max(0, delay + jitter)
+        attemptRef.current++
+
+        reconnectTimerRef.current = setTimeout(() => {
           connectRef.current()
-        }, 5000)
+        }, nextDelay)
       }
 
       ws.onerror = () => {
         // onclose will follow
       }
     } catch {
-      // Connection failed, retry later
-      setTimeout(() => {
+      // Connection failed, retry with backoff
+      const delay = Math.min(
+        RECONNECT_BASE_MS * Math.pow(2, attemptRef.current),
+        RECONNECT_MAX_MS
+      )
+      attemptRef.current++
+      reconnectTimerRef.current = setTimeout(() => {
         if (mountedRef.current) connectRef.current()
-      }, 5000)
+      }, delay)
     }
   }, [])
 
@@ -142,16 +172,19 @@ export function useTicketDashboard(
 
   useEffect(() => {
     mountedRef.current = true
+    attemptRef.current = 0
     connect()
 
     return () => {
       mountedRef.current = false
-
       if (tokenWatchRef.current) {
         clearInterval(tokenWatchRef.current)
         tokenWatchRef.current = null
       }
-
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = null
+      }
       if (wsRef.current) {
         wsRef.current.onclose = null
         wsRef.current.onerror = null

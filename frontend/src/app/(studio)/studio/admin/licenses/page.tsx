@@ -224,13 +224,6 @@ export default function AdminLicensesPage() {
   }
   if (!user || !['admin', 'owner'].includes(user.role)) return null
 
-  const _filtered = licenses.filter(l =>
-    l.license_key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (l.user_email && l.user_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    l.tier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.status.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
   // ── Handlers ────────────────────────────────────────────
   const handleCreate = async () => {
     setIsCreating(true); setDialogError(null)

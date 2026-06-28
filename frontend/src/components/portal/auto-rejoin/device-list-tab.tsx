@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Play, Square, Cookie, LogIn } from "lucide-react"
 import type { RobloxClient } from "./types"
 import { generateRandomClient } from "./types"
-import Image from "next/image"
 
 interface Props {
   clients: RobloxClient[]

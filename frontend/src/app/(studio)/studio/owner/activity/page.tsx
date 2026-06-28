@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/auth-context'
 import { api } from '@/lib/api'
 import { 
-  Activity, CheckCircle, XCircle, AlertCircle, Loader2, Trash2, 
+  Activity, CheckCircle, XCircle, Loader2, Trash2, 
   Search, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -16,7 +16,7 @@ interface ActivityLog {
   id: string
   user_id: string
   action: string
-  details: Record<string, any> | null
+  details: Record<string, unknown> | null
   created_at: string
   user_name: string | null
   user_email: string | null
@@ -31,7 +31,6 @@ export default function OwnerActivityPage() {
   const [total, setTotal] = useState(0)
   const [isLoadingLogs, setIsLoadingLogs] = useState(true)
   const [search, setSearch] = useState('')
-  const [actionFilter, setActionFilter] = useState('')
   const [page, setPage] = useState(1)
   const limit = 25
 
@@ -61,7 +60,6 @@ export default function OwnerActivityPage() {
         limit: String(limit),
         offset: String(offset),
         search,
-        action: actionFilter
       })
       const res = await api.get<{ status: string; data: { logs: ActivityLog[]; total: number } }>(
         `/v1/activity/admin/all?${queryParams.toString()}`
@@ -73,10 +71,10 @@ export default function OwnerActivityPage() {
     } finally {
       setIsLoadingLogs(false)
     }
-  }, [mounted, user, page, search, actionFilter])
+  }, [mounted, user, page, search])
 
   useEffect(() => {
-    fetchLogs()
+    Promise.resolve().then(() => fetchLogs())
   }, [fetchLogs])
 
   const handleCleanLogs = async () => {
@@ -91,8 +89,8 @@ export default function OwnerActivityPage() {
       setIsCleanOpen(false)
       setPage(1)
       fetchLogs()
-    } catch (err: any) {
-      alert(err.message || 'Failed to clean logs')
+    } catch (err: unknown) {
+      alert((err as { message?: string })?.message || 'Failed to clean logs')
     } finally {
       setIsCleaning(false)
     }
@@ -102,7 +100,7 @@ export default function OwnerActivityPage() {
     return action.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
   }
 
-  const formatDetails = (details: Record<string, any> | null) => {
+  const formatDetails = (details: Record<string, unknown> | null) => {
     if (!details) return '-'
     try {
       const items = Object.entries(details).map(([key, val]) => {
@@ -110,18 +108,19 @@ export default function OwnerActivityPage() {
         return `${key}: ${valStr}`
       })
       return items.join(', ')
-    } catch (e) {
+    } catch {
       return JSON.stringify(details)
     }
   }
 
-  const getTargetValue = (action: string, details: Record<string, any> | null) => {
+  const getTargetValue = (action: string, details: Record<string, unknown> | null) => {
     if (!details) return '-'
-    if (action.includes('voucher')) return details.voucher_code || details.code || '-'
-    if (action.includes('device') || action.includes('hwid')) return details.roblox_username || details.roblox_id || details.hwid || '-'
-    if (action.includes('ticket')) return `Ticket #${details.ticket_id || details.id || ''}`
-    if (action.includes('user')) return details.target_email || details.target_name || details.email || '-'
-    return details.target || details.id || '-'
+    const d = details as Record<string, string | number | undefined>
+    if (action.includes('voucher')) return d.voucher_code || d.code || '-'
+    if (action.includes('device') || action.includes('hwid')) return d.roblox_username || d.roblox_id || d.hwid || '-'
+    if (action.includes('ticket')) return `Ticket #${d.ticket_id || d.id || ''}`
+    if (action.includes('user')) return d.target_email || d.target_name || d.email || '-'
+    return d.target || d.id || '-'
   }
 
   const totalPages = Math.ceil(total / limit)

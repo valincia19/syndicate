@@ -27,14 +27,12 @@ const MOCK_LOGS: LogEntry[] = Array.from({ length: 50 }, (_, i) => ({
 export default function ExecutionLogsTab() {
   const [logs] = useState(MOCK_LOGS)
   const [filterLevel, setFilterLevel] = useState<"ALL" | "INFO" | "WARN" | "ERROR">("ALL")
-  const [searchQuery, setSearchQuery] = useState("")
   const logContainerRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(true)
   const [isLive, setIsLive] = useState(false)
 
   const filteredLogs = logs.filter((log) => {
     if (filterLevel !== "ALL" && log.level !== filterLevel) return false
-    if (searchQuery && !log.message.toLowerCase().includes(searchQuery.toLowerCase())) return false
     return true
   })
 

@@ -15,10 +15,8 @@ import {
   Crosshair,
   Scan,
   Move3d,
-  Plane,
   Footprints,
   ArrowUpDown,
-  Weight,
   ToggleLeft,
   ToggleRight,
 } from "lucide-react"

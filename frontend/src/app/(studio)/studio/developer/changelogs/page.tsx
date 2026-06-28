@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useAuth } from '@/context/auth-context'
+
 import { api } from '@/lib/api'
 import { ClientDate } from '@/components/ui/client-date'
 import {
@@ -36,7 +36,7 @@ function formatDate(d: string): React.ReactNode {
 }
 
 export default function DeveloperChangelogsPage() {
-  const { user: _user } = useAuth()
+
   const [changelogs, setChangelogs] = useState<Changelog[]>([])
   const [releases, setReleases] = useState<Release[]>([])
   const [isLoading, setIsLoading] = useState(true)

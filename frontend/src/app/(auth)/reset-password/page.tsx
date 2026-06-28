@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AuthLayout } from "@/components/auth/auth-layout"
-import { FormField, FieldGroup, Field, FieldDescription } from "@/components/ui/field"
+import { FormField, FieldGroup, Field } from "@/components/ui/field"
 import { Button } from "@/components/ui/button"
 import { authService } from "@/services/auth"
 import { useLanguage } from "@/components/providers/language-provider"

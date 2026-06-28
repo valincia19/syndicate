@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
 import { useEffect, useState, Suspense, useCallback } from 'react'
@@ -204,12 +205,12 @@ function ReleasesContent() {
                   {/* Game Logo */}
                   <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-muted border border-border flex items-center justify-center">
                     {r.game_logo ? (
-                      <img
-                        src={r.game_logo}
-                        alt={r.game_name || ''}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                      />
+                    <img
+                      src={r.game_logo}
+                      alt={r.game_name || ''}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
                     ) : (
                       <div className={`w-full h-full bg-gradient-to-br ${grad} flex items-center justify-center font-heading text-[13px] tracking-tight`}>
                         {r.logo_text || '?'}

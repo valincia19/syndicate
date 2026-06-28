@@ -187,9 +187,7 @@ export default function StaffTicketDetailPage() {
         }
       })
     },
-    onError: (err) => {
-      console.debug('[WS]', err)
-    },
+    onError: () => {},
   })
 
   const handleSendReply = async () => {

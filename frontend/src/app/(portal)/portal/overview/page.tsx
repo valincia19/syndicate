@@ -66,9 +66,6 @@ export default function OverviewPage() {
   const [execStats, setExecStats] = useState<ExecStats | null>(null)
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([])
 
-  const loadstring = `_G.ValincKey = "VS-32A8-XXXX"\nloadstring(game:HttpGet("https://api.valinc.xyz/loader.lua"))()`
-
-
 
   useEffect(() => {
     let active = true
