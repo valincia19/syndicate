@@ -683,7 +683,7 @@ export function Hero2Showcase() {
 }
 
 // ============================================================================
-// 3. HERO 3: DISCORD WHITELIST SHOWCASE (100% Exact Replica of DiscordWhitelist.tsx)
+// 3. HERO 3: LICENSE & DISCORD WHITELIST SHOWCASE (100% Exact Replica of DiscordWhitelist.tsx)
 // ============================================================================
 const hero3Features = [
   { icon: Key, label: "Keyless Auth", desc: "OAuth2 handshake — zero secrets", hue: "85 30% 65%" },
@@ -713,6 +713,20 @@ const hero3TopUsers = [
   { rank: 3, id: "HexCore", role: "Pro", whitelisted: 647, avatar: "H" },
   { rank: 4, id: "SynthWave", role: "Premium", whitelisted: 503, avatar: "S" },
   { rank: 5, id: "QuantumBot", role: "Member", whitelisted: 412, avatar: "Q" },
+]
+
+const hero3Guilds = [
+  { name: "Valinc Syndicate Hub", members: "12,842", ping: "12ms", status: "PRIMARY" },
+  { name: "Valinc Beta Testers", members: "1,204", ping: "15ms", status: "CONNECTED" },
+  { name: "Nova Security Group", members: "4,982", ping: "18ms", status: "CONNECTED" },
+]
+
+const hero3QuickStats = [
+  { icon: Zap, label: "Auth Latency", value: "< 50ms" },
+  { icon: Users, label: "Linked", value: "3,732" },
+  { icon: Server, label: "Sessions", value: "847" },
+  { icon: Activity, label: "Req/s", value: "1,432" },
+  { icon: Clock, label: "Uptime", value: "99.97%" },
 ]
 
 export function Hero3Showcase() {
@@ -785,14 +799,15 @@ export function Hero3Showcase() {
     <ScaledContainer>
       <div className="relative w-[1920px] h-[1080px] overflow-hidden rounded-[20px] border border-zinc-800 bg-zinc-900/60 shadow-2xl flex-shrink-0 select-none font-sans">
         <div className="relative z-10 h-full flex flex-col p-10 justify-between">
+          {/* Header */}
           <div className="flex items-center justify-between mb-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-zinc-900/80 border border-zinc-800">
                 <MessageCircle size={20} style={{ color: GOLD }} />
               </div>
               <div>
-                <h1 className="text-2xl font-normal tracking-tight text-zinc-100 font-mono uppercase">Discord Whitelist System</h1>
-                <p className="text-xs text-zinc-500">Instant access with keyless Discord account linkage. Sync roles and run scripts seamlessly without annoying keys.</p>
+                <h1 className="text-2xl font-normal tracking-tight text-zinc-100 font-mono uppercase">License & Discord Whitelist System</h1>
+                <p className="text-xs text-zinc-500">Keyless Discord account verification, automatic role synchronization, and instant license management without annoying keys.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-900/80 border border-zinc-800 text-emerald-400 font-mono">
@@ -804,7 +819,9 @@ export function Hero3Showcase() {
             </div>
           </div>
 
+          {/* Main Body Grid */}
           <div className="flex-1 flex gap-6 min-h-0 items-stretch">
+            {/* Left Column */}
             <div className="w-[380px] flex flex-col gap-5 min-h-0 flex-shrink-0">
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 font-mono">
@@ -853,6 +870,7 @@ export function Hero3Showcase() {
               </div>
             </div>
 
+            {/* Center Column */}
             <div className="flex-1 flex flex-col gap-5 min-h-0">
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0 font-mono">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800/40 shrink-0">
@@ -997,6 +1015,27 @@ export function Hero3Showcase() {
                 </div>
               </div>
 
+              {/* Connected Guilds Card */}
+              <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-shrink-0">
+                <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5">
+                  <Globe size={12} style={{ color: GOLD }} />
+                  Active Discord Guild Sync
+                </div>
+                <div className="space-y-2">
+                  {hero3Guilds.map((g, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-zinc-950/40 border border-zinc-800/40">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-zinc-300 font-medium">{g.name}</span>
+                        <span className="text-[8px] text-zinc-500">{g.members} members · {g.ping}</span>
+                      </div>
+                      <span className="text-[8px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                        {g.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="rounded-2xl p-5 border border-zinc-800 bg-zinc-900/40 flex-1 flex flex-col min-h-0">
                 <div className="text-[10px] font-semibold text-zinc-500 tracking-widest uppercase mb-3 flex items-center gap-1.5">
                   <Activity size={12} style={{ color: GOLD }} />
@@ -1015,10 +1054,20 @@ export function Hero3Showcase() {
 
           {/* Footer Bar */}
           <div className="mt-6 flex border-t border-zinc-800 justify-between items-center pt-4 flex-shrink-0 font-mono text-xs">
-            <div className="flex items-center gap-6 text-zinc-400">
-              <div>WHITELISTED USERS: <strong className="text-zinc-200">24,890+</strong></div>
-              <div>SCRIPTS AVAILABLE: <strong className="text-zinc-200">450+</strong></div>
-              <div>SESSIONS: <strong className="text-zinc-200">{sessionCount}</strong></div>
+            <div className="flex gap-1">
+              {hero3QuickStats.map((s, i) => {
+                const StatIcon = s.icon
+                const displayValue = s.label === "Sessions" ? `${sessionCount}` : s.value
+                return (
+                  <div key={s.label} className={`flex items-center gap-3 px-5 py-1.5 ${i < hero3QuickStats.length - 1 ? "border-r border-zinc-800" : ""}`}>
+                    <StatIcon className="size-4" style={{ color: GOLD }} />
+                    <div>
+                      <div className="text-xs font-bold text-zinc-200">{displayValue}</div>
+                      <div className="text-[9px] text-zinc-500 tracking-wide uppercase">{s.label}</div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
             <button
               onClick={startSimulation}
