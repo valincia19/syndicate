@@ -163,7 +163,6 @@ export default function PricingSection() {
     { text: t("planPremFeat4"), unlocked: true },
     { text: t("planPremFeat5"), unlocked: true },
     { text: t("planPremFeat6"), unlocked: true },
-    { text: t("planPremFeat7"), unlocked: true },
     { text: t("planPremFeat8"), unlocked: true },
     { text: t("planPremFeat9"), unlocked: false },
     { text: t("planPremFeat10"), unlocked: false },

@@ -30,7 +30,7 @@ const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 const PLAN_FEATURES: Record<string, string[]> = {
   premium: [
     "planPremFeat1","planPremFeat2","planPremFeat3","planPremFeat4",
-    "planPremFeat5","planPremFeat6","planPremFeat7","planPremFeat8",
+    "planPremFeat5","planPremFeat6","planPremFeat8",
   ],
   pro: [
     "planProFeat1","planProFeat2","planProFeat3","planProFeat4",
