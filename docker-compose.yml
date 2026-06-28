@@ -50,6 +50,7 @@ services:
       - NODE_ENV=production
       - ALLOWED_ORIGINS=http://localhost:3000
       - JWT_SECRET=285ba4ebe63b282c83800c17f8c6adada635dc7bac917da6eee4d652d74dcd3869b1a7fea0d6f529c1496c35bd9b5000391b5c8725fc631f5fbb22bba3f1ec95
+      - JWT_EXPIRES_IN=7d
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=valinc_user
@@ -58,8 +59,47 @@ services:
       - DB_SSL=false
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=
       - FRONTEND_URL=http://localhost:3000
       - BACKEND_URL=http://localhost:5000
+
+      # Discord OAuth2 (Optional)
+      - DISCORD_CLIENT_ID=
+      - DISCORD_CLIENT_SECRET=
+      - DISCORD_REDIRECT_URI=http://localhost:5000/v1/auth/discord/callback
+
+      # Cloudflare R2 Object Storage (Optional)
+      - R2_ENDPOINT=
+      - R2_ACCESS_KEY_ID=
+      - R2_SECRET_ACCESS_KEY=
+      - R2_BUCKET_NAME=
+      - R2_PUBLIC_URL=
+
+      # Tokopay Payment Gateway (Optional)
+      - TOKOPAY_BASE_URL=https://api.tokopay.id
+      - TOKOPAY_MERCHANT_ID=
+      - TOKOPAY_SECRET_KEY=
+      - TOKOPAY_ORDER_EXPIRY=24h
+
+      # NOWPayments Crypto Gateway (Optional)
+      - NOWPAYMENTS_BASE_URL=https://api.nowpayments.io
+      - NOWPAYMENTS_API_KEY=
+      - NOWPAYMENTS_IPN_SECRET=
+
+      # Cloudflare Turnstile Captcha (Optional)
+      - TURNSTILE_SITE_KEY=
+      - TURNSTILE_SECRET_KEY=
+
+      # Linkvertise (Optional)
+      - LINKVERTISE_ANTI_BYPASS_TOKEN=
+
+      # SMTP Mail Server (Optional)
+      - MAIL_HOST=
+      - MAIL_PORT=
+      - MAIL_USERNAME=
+      - MAIL_PASSWORD=
+      - MAIL_FROM_ADDRESS=
+      - MAIL_FROM_NAME=valinc-syndicate
     restart: unless-stopped
 
   # Next.js Frontend
