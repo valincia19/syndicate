@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -38,50 +39,72 @@ export const metadata: Metadata = {
     "Advanced LUA execution, undetected anti-cheat bypasses, and secure account synchronization for Roblox.",
   keywords: [
     "VALINC SYNDICATE",
-    "Roblox scripting",
-    "LUA execution",
-    "Byfron bypass",
-    "Hyperion bypass",
-    "Roblox exploit",
-    "script hub",
-    "keyless Roblox",
-    "Synapse Z",
-    "Wave executor",
-    "Roblox undetected",
+    "Roblox Executor",
+    "Roblox Script",
+    "Lua Execution",
+    "Byfron Bypass",
+    "Hyperion Bypass",
+    "Keyless Executor",
+    "Roblox Exploiting",
+    "Roblox Script Hub",
+    "Solara alternative",
+    "Wave alternative",
+    "Celery alternative",
+    "Blox Fruits script",
+    "Pet Simulator 99 script",
+    "HWID Spoofer Roblox",
   ],
+  authors: [{ name: "VALINC SYNDICATE Team" }],
+  creator: "VALINC SYNDICATE",
+  publisher: "VALINC SYNDICATE",
+  icons: {
+    icon: "/ai-logo.png",
+    shortcut: "/ai-logo.png",
+    apple: "/ai-logo.png",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "VALINC SYNDICATE",
-    title: "VALINC SYNDICATE - Roblox Scripting, Refined",
-    description:
-      "Advanced LUA execution, undetected anti-cheat bypasses, and secure account synchronization.",
     url: "https://valincsyndicate.com",
+    siteName: "VALINC SYNDICATE",
+    title: "VALINC SYNDICATE - Next-Gen Roblox Scripting Engine",
+    description:
+      "Lightweight Roblox executor with zero lag, instant Lua injection, undetected Byfron bypass, and keyless Discord whitelist.",
+    images: [
+      {
+        url: "/templates/ai-icons-1.jpg",
+        width: 1920,
+        height: 1080,
+        alt: "VALINC SYNDICATE Engine Showcase",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "VALINC SYNDICATE - Roblox Scripting, Refined",
+    title: "VALINC SYNDICATE - Next-Gen Roblox Scripting Engine",
     description:
-      "Advanced LUA execution, undetected anti-cheat bypasses, and secure account synchronization.",
+      "Lightweight Roblox executor with zero lag, instant Lua injection, and undetected Byfron bypass.",
+    images: ["/templates/ai-icons-1.jpg"],
   },
   robots: {
     index: true,
     follow: true,
-  },
-  alternates: {
-    canonical: "https://valincsyndicate.com",
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
-// Official Next.js pattern: inline script runs before React hydration
-// to prevent theme flash. Reads localStorage and sets dark class on <html>.
 const themeScript = `
-(function(){
+(function() {
   try {
-    var t = localStorage.getItem("theme");
-    var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var resolved = t || (prefersDark ? "dark" : "light");
-    if (resolved === "dark") {
+    var storedTheme = localStorage.getItem("theme");
+    var theme = storedTheme || "dark";
+    if (theme === "dark" || (!storedTheme && true)) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
@@ -101,10 +124,16 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${outfitHeading.variable} font-sans`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <script
+      <body className="group/body bg-background text-foreground overscroll-none font-sans antialiased">
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
+        <Script
+          id="ld-json-org"
           type="application/ld+json"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -123,8 +152,10 @@ export default function RootLayout({
             }),
           }}
         />
-        <script
+        <Script
+          id="ld-json-website"
           type="application/ld+json"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -144,8 +175,6 @@ export default function RootLayout({
             }),
           }}
         />
-      </head>
-      <body className="group/body bg-background text-foreground overscroll-none font-sans antialiased">
         <ThemeProvider>
           <LanguageProvider>
             <Toaster position="top-right" richColors closeButton />

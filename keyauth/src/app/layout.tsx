@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { LanguageProvider } from "@/components/providers/language-provider";
@@ -65,12 +66,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${outfitHeading.variable} font-sans`}
       suppressHydrationWarning
     >
-      <head>
-        {typeof window === "undefined" && (
-          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        )}
-      </head>
       <body className="bg-background text-foreground font-sans antialiased">
+        <Script
+          id="keyauth-theme-script"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
         <ThemeProvider>
           <LanguageProvider>
             <Toaster position="top-right" richColors closeButton />
