@@ -22,6 +22,7 @@ router.get('/folders/:id/breadcrumb', ctrl.breadcrumb.bind(ctrl));
 
 // Bulk operations
 router.post('/bulk-move', ctrl.bulkMove.bind(ctrl));
+router.post('/repair-orphans', ctrl.repairOrphans.bind(ctrl));
 
 // Scripts
 router.get('/stats', ctrl.stats.bind(ctrl));

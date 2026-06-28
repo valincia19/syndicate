@@ -142,6 +142,13 @@ class ScriptController {
       res.status(200).json({ status: 'success', message: 'Items moved', data: results });
     } catch (err) { next(err); }
   }
+
+  async repairOrphans(req, res, next) {
+    try {
+      const results = await scriptService.repairOrphans();
+      res.status(200).json({ status: 'success', message: 'Orphaned files and folders restored to root level', data: results });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new ScriptController();

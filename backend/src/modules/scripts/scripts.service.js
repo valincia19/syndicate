@@ -295,6 +295,12 @@ class ScriptService {
     }
     return parts;
   }
+
+  async repairOrphans() {
+    const result = await ScriptModel.repairOrphans();
+    await cacheUtility.delPrefix('cache:scripts:');
+    return result;
+  }
 }
 
 module.exports = new ScriptService();

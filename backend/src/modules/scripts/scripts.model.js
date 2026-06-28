@@ -186,15 +186,35 @@ class ScriptModel {
        FROM script_folders f
        LEFT JOIN users u ON f.user_id = u.id`;
     const params = [];
-    if (parentId === null || parentId === '__root__') {
-      sql += ' WHERE f.parent_id IS NULL';
-    } else {
-      sql += ` WHERE f.parent_id = $1`;
-      params.push(parentId);
+    if (parentId !== 'all') {
+      if (parentId === null || parentId === '__root__') {
+        sql += ' WHERE f.parent_id IS NULL';
+      } else {
+        sql += ` WHERE f.parent_id = $1`;
+        params.push(parentId);
+      }
     }
     sql += ' ORDER BY f.name ASC';
     const result = await pool.query(sql, params);
     return result.rows;
+  }
+
+  async repairOrphans() {
+    const pool = getPool();
+    const scriptRes = await pool.query(`
+      UPDATE scripts 
+      SET folder_id = NULL 
+      WHERE folder_id IS NOT NULL AND folder_id NOT IN (SELECT id FROM script_folders)
+    `);
+    const folderRes = await pool.query(`
+      UPDATE script_folders 
+      SET parent_id = NULL 
+      WHERE parent_id IS NOT NULL AND parent_id NOT IN (SELECT id FROM script_folders)
+    `);
+    return {
+      repaired_scripts: scriptRes.rowCount || 0,
+      repaired_folders: folderRes.rowCount || 0,
+    };
   }
 
   async findFolderById(id) {

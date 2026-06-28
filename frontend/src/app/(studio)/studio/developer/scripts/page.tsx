@@ -13,7 +13,7 @@ import { VirtualTreeList } from '@/components/studio/explorer/virtual-tree'
 import {
   FolderPlus, Home, Upload, Globe, FileCode, Loader2,
   Activity, Code2, Terminal, ShieldAlert, ShieldCheck, AlertTriangle,
-  FilePlus
+  FilePlus, Wrench
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -102,7 +102,35 @@ function ScriptsContent(): React.ReactNode {
     setConsoleLogs(prev => [...prev, msg])
   }, [])
 
-  useEffect(() => { Promise.resolve().then(() => setReady(true)) }, [])
+  const [isRepairing, setIsRepairing] = useState(false)
+
+  // ── Load tree level ───────────────────────────────────
+  const loadLevel = useCallback(async (parentId: string | null) => {
+    try {
+      const scriptQs = parentId ? `?folder_id=${parentId}` : '?folder_id=__root__'
+      const folderQs = parentId ? `?parent_id=${parentId}` : ''
+      const [sRes, fRes] = await Promise.all([
+        api.get<{ status: string; data: { scripts: ScriptData[] } }>(`/v1/scripts${scriptQs}`),
+        api.get<{ status: string; data: { folders: FolderData[] } }>(`/v1/scripts/folders${folderQs}`),
+      ])
+      store.getState().loadChildren(parentId, fRes.data.folders || [], sRes.data.scripts || [])
+    } catch (e) { console.error(e) }
+  }, [])
+
+  const handleRepairOrphans = useCallback(async () => {
+    if (isRepairing) return
+    setIsRepairing(true)
+    try {
+      const res = await api.post<{ status: string; message: string; data: { repaired_scripts: number; repaired_folders: number } }>('/v1/scripts/repair-orphans')
+      logToConsole(`[SYSTEM] Diagnostic repair finished: ${res.data.repaired_scripts} files and ${res.data.repaired_folders} folders restored to root.`)
+      await loadLevel(null)
+      alert(`Diagnostic Fix Completed!\n\nRestored ${res.data.repaired_scripts} hidden files and ${res.data.repaired_folders} folders to Root level.`)
+    } catch (err) {
+      console.error('Repair orphans failed:', err)
+    } finally {
+      setIsRepairing(false)
+    }
+  }, [isRepairing, loadLevel, logToConsole])
 
   // Sync editor when active tab changes
   useEffect(() => {
@@ -124,18 +152,7 @@ function ScriptsContent(): React.ReactNode {
     }))
   }, [activeTabNodeId])
 
-  // ── Load tree level ───────────────────────────────────
-  const loadLevel = useCallback(async (parentId: string | null) => {
-    try {
-      const scriptQs = parentId ? `?folder_id=${parentId}` : '?folder_id=__root__'
-      const folderQs = parentId ? `?parent_id=${parentId}` : ''
-      const [sRes, fRes] = await Promise.all([
-        api.get<{ status: string; data: { scripts: ScriptData[] } }>(`/v1/scripts${scriptQs}`),
-        api.get<{ status: string; data: { folders: FolderData[] } }>(`/v1/scripts/folders${folderQs}`),
-      ])
-      store.getState().loadChildren(parentId, fRes.data.folders || [], sRes.data.scripts || [])
-    } catch (e) { console.error(e) }
-  }, [])
+
 
   // ── Tab handlers ─────────────────────────────────────
   const handleCloseTab = useCallback((nodeId: string) => {
@@ -773,6 +790,21 @@ function ScriptsContent(): React.ReactNode {
           >
             <FolderPlus className="w-3.5 h-3.5 text-primary" />
             New Folder
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRepairOrphans}
+            disabled={isRepairing}
+            title="Scan & Restore Hidden / Unassigned Items"
+            className="h-8 text-[10px] font-mono flex items-center gap-1.5 border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 cursor-pointer"
+          >
+            {isRepairing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+            ) : (
+              <Wrench className="w-3.5 h-3.5 text-amber-500" />
+            )}
+            Fix Hidden Items
           </Button>
           <Button
             variant="default"
