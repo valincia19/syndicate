@@ -74,6 +74,7 @@ function publishBadge(status: string) {
 }
 
 function ReleasesContent() {
+  const BASE_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
@@ -431,11 +432,11 @@ function ReleasesContent() {
                 </h4>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 rounded-lg bg-muted/40 border border-border p-2.5 font-mono text-[10px] text-foreground break-all select-all">
-                    http://localhost:5000/v1/releases/{detailRelease.prefix}.lua
+                    {BASE_API}/v1/releases/{detailRelease.prefix}.lua
                   </div>
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(`http://localhost:5000/v1/releases/${detailRelease.prefix}.lua`)
+                      navigator.clipboard.writeText(`${BASE_API}/v1/releases/${detailRelease.prefix}.lua`)
                       setCopiedLoader(true)
                       setTimeout(() => setCopiedLoader(false), 2000)
                     }}
@@ -449,7 +450,7 @@ function ReleasesContent() {
                   </button>
                 </div>
                 <p className="text-[9px] text-muted-foreground/50 mt-1 font-mono">
-                  Use this URL in your loadstring: loadstring(game:HttpGet(&quot;http://localhost:5000/v1/releases/{detailRelease.prefix}.lua&quot;))()
+                  Use this URL in your loadstring: loadstring(game:HttpGet(`${BASE_API}/v1/releases/${detailRelease.prefix}.lua`))()
                 </p>
               </div>
 
