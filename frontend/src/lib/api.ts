@@ -111,7 +111,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       const dataObj = data as { message?: string; status?: string } | null
       const msg = String(dataObj?.message || '').toLowerCase()
 
-      if (response.status === 401 || response.status === 403) {
+      const isSuspendedOrDeleted = msg.includes('suspend') || msg.includes('no longer exist') || msg.includes('account');
+      if (response.status === 401 || (response.status === 403 && isSuspendedOrDeleted)) {
         tokenManager.clearToken()
 
         const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
@@ -122,7 +123,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
         if (typeof window !== 'undefined' && isProtectedRoute) {
           let reason = 'expired'
-          if (response.status === 403 || msg.includes('suspend')) {
+          if (msg.includes('suspend')) {
             reason = 'suspended'
           } else if (msg.includes('no longer exist') || msg.includes('not found')) {
             reason = 'deleted'
