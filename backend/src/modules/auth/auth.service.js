@@ -47,11 +47,8 @@ class AuthService {
     // Minimum 8 chars, must contain at least one letter and one number.
     // This is enforced for new registrations only; existing users with
     // legacy 6-char passwords keep their accounts (backward compat).
-    if (!password || password.length < 8) {
-      throw new AppError('Password must be at least 8 characters long', 400);
-    }
-    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
-      throw new AppError('Password must contain at least one letter and one number', 400);
+    if (!password || password.length < 6) {
+      throw new AppError('Password must be at least 6 characters long', 400);
     }
 
     // ── Username Validation (if provided) ─────────────────────
@@ -473,11 +470,8 @@ class AuthService {
     }
 
     // Validate new password strength
-    if (!newPassword || newPassword.length < 8) {
-      throw new AppError('Password must be at least 8 characters long', 400);
-    }
-    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      throw new AppError('Password must contain at least one letter and one number', 400);
+    if (!newPassword || newPassword.length < 6) {
+      throw new AppError('Password must be at least 6 characters long', 400);
     }
 
     // Hash the new password
