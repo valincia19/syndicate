@@ -189,8 +189,9 @@ function setupWebSocket(server) {
 
   // ─── HTTP → WebSocket Upgrade Handler ──────────────────────────
   server.on('upgrade', async (req, socket, head) => {
+    const xff = req.headers['x-forwarded-for'];
     const remoteIp = req.headers['cf-connecting-ip'] || 
-                     req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                     (xff ? xff.split(',')[0].trim() : null) || 
                      req.socket.remoteAddress || 
                      '127.0.0.1';
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
@@ -286,7 +287,7 @@ function setupWebSocket(server) {
       userId: user.id,
       role: user.role,
       ip: req.headers['cf-connecting-ip'] || 
-          req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+          (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : null) || 
           req.socket.remoteAddress || 
           '127.0.0.1',
     });
