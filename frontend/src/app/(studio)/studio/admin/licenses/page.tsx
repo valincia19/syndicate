@@ -111,6 +111,15 @@ function TierDropdown({ value, onChange, open, setOpen, refProp }: {
   )
 }
 
+function toDatetimeLocal(isoString: string | null | undefined): string {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  if (isNaN(date.getTime())) return ''
+  const offset = date.getTimezoneOffset()
+  const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+  return localDate.toISOString().slice(0, 16)
+}
+
 export default function AdminLicensesPage() {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
@@ -146,6 +155,11 @@ export default function AdminLicensesPage() {
   const [editTarget, setEditTarget] = useState<License | null>(null)
   const [editStatus, setEditStatus] = useState('')
   const [editTier, setEditTier] = useState('')
+  const [editHwidLimit, setEditHwidLimit] = useState('')
+  const [editUses, setEditUses] = useState('')
+  const [editMaxUses, setEditMaxUses] = useState('')
+  const [editExpiresAt, setEditExpiresAt] = useState('')
+  const [editHwid, setEditHwid] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   // Delete dialog
@@ -245,6 +259,22 @@ export default function AdminLicensesPage() {
     const payload: Record<string, unknown> = {}
     if (editStatus !== editTarget.status) payload.status = editStatus
     if (editTier !== editTarget.tier) payload.tier = editTier
+
+    const hwidLimitVal = parseInt(editHwidLimit, 10)
+    if (!isNaN(hwidLimitVal) && hwidLimitVal !== editTarget.hwid_limit) payload.hwid_limit = hwidLimitVal
+
+    const usesVal = parseInt(editUses, 10)
+    if (!isNaN(usesVal) && usesVal !== editTarget.uses) payload.uses = usesVal
+
+    const maxUsesVal = parseInt(editMaxUses, 10)
+    if (!isNaN(maxUsesVal) && maxUsesVal !== editTarget.max_uses) payload.max_uses = maxUsesVal
+
+    const expiresAtVal = editExpiresAt ? new Date(editExpiresAt).toISOString() : null
+    if (expiresAtVal !== editTarget.expires_at) payload.expires_at = expiresAtVal
+
+    const hwidVal = editHwid ? editHwid.trim() : null
+    if (hwidVal !== editTarget.hwid) payload.hwid = hwidVal
+
     if (Object.keys(payload).length === 0) { setEditTarget(null); return }
     try {
       const res = await api.patch<{ data: { license: License } }>(`/v1/licenses/${editTarget.id}`, payload)
@@ -392,7 +422,17 @@ export default function AdminLicensesPage() {
                             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-all cursor-pointer">
                             {copiedId === l.id ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
-                          <button title="Edit License" onClick={() => { setEditTarget(l); setEditStatus(l.status); setEditTier(l.tier); setDialogError(null) }}
+                          <button title="Edit License" onClick={() => {
+                            setEditTarget(l);
+                            setEditStatus(l.status);
+                            setEditTier(l.tier);
+                            setEditHwidLimit(String(l.hwid_limit));
+                            setEditUses(String(l.uses));
+                            setEditMaxUses(String(l.max_uses));
+                            setEditExpiresAt(toDatetimeLocal(l.expires_at));
+                            setEditHwid(l.hwid || '');
+                            setDialogError(null)
+                          }}
                             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-all cursor-pointer">
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
@@ -514,26 +554,60 @@ export default function AdminLicensesPage() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-              <div className="px-2.5 py-1.5 rounded bg-muted/10 border border-border/30">
-                <span className="text-muted-foreground block mb-0.5">HWID Limit</span>
-                <span className="text-foreground font-semibold">{editTarget.hwid_limit} device{editTarget.hwid_limit > 1 ? 's' : ''}</span>
+            <div className="grid grid-cols-2 gap-3 text-[10px] font-mono">
+              <div>
+                <label className="block text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1 font-bold select-none">HWID Limit</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="50" 
+                  value={editHwidLimit} 
+                  onChange={(e) => setEditHwidLimit(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-md border border-border bg-muted/50 dark:bg-[#070708] text-foreground focus:outline-hidden focus:border-primary/50"
+                />
               </div>
-              <div className="px-2.5 py-1.5 rounded bg-muted/10 border border-border/30">
-                <span className="text-muted-foreground block mb-0.5">Uses</span>
-                <span className="text-foreground font-semibold">{editTarget.uses}{editTarget.max_uses > 0 ? ` / ${editTarget.max_uses}` : ' (unlimited)'}</span>
+
+              <div>
+                <label className="block text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1 font-bold select-none">HWID Value</label>
+                <input 
+                  type="text" 
+                  placeholder="None" 
+                  value={editHwid} 
+                  onChange={(e) => setEditHwid(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-md border border-border bg-muted/50 dark:bg-[#070708] text-foreground focus:outline-hidden focus:border-primary/50"
+                />
               </div>
-              <div className="px-2.5 py-1.5 rounded bg-muted/10 border border-border/30">
-                <span className="text-muted-foreground block mb-0.5">Owner</span>
-                <span className="text-foreground font-semibold">{editTarget.user_email || '-'}</span>
+
+              <div>
+                <label className="block text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1 font-bold select-none">Uses Count</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  value={editUses} 
+                  onChange={(e) => setEditUses(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-md border border-border bg-muted/50 dark:bg-[#070708] text-foreground focus:outline-hidden focus:border-primary/50"
+                />
               </div>
-              <div className="px-2.5 py-1.5 rounded bg-muted/10 border border-border/30">
-                <span className="text-muted-foreground block mb-0.5">Expires</span>
-                <span className="text-foreground font-semibold">{formatDate(editTarget.expires_at)}</span>
+
+              <div>
+                <label className="block text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1 font-bold select-none">Max Uses (0 = unlimited)</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  value={editMaxUses} 
+                  onChange={(e) => setEditMaxUses(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-md border border-border bg-muted/50 dark:bg-[#070708] text-foreground focus:outline-hidden focus:border-primary/50"
+                />
               </div>
-              <div className="px-2.5 py-1.5 rounded bg-muted/10 border border-border/30">
-                <span className="text-muted-foreground block mb-0.5">HWID</span>
-                <span className="text-foreground font-semibold font-mono text-[9px]">{editTarget.hwid || '-'}</span>
+
+              <div className="col-span-2">
+                <label className="block text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1 font-bold select-none">Expires At</label>
+                <input 
+                  type="datetime-local" 
+                  value={editExpiresAt} 
+                  onChange={(e) => setEditExpiresAt(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-md border border-border bg-muted/50 dark:bg-[#070708] text-foreground focus:outline-hidden focus:border-primary/50"
+                />
               </div>
             </div>
 

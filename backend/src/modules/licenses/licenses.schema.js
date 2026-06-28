@@ -20,6 +20,9 @@ const updateLicenseSchema = z
     status: z.enum(['unused', 'active', 'revoked', 'expired']).optional(),
     hwid_limit: z.number().int().min(1).max(50).optional(),
     expires_at: z.string().datetime().optional().nullable(),
+    max_uses: z.number().int().min(0).optional(),
+    uses: z.number().int().min(0).optional(),
+    hwid: z.string().optional().nullable(),
   })
   .strict();
 
