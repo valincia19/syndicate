@@ -96,7 +96,7 @@ export default function PricingSection() {
 
   // Auto-detect currency
   useEffect(() => {
-    if (language === 'id') {
+    if (language === 'ID') {
       setDetectedCurrency('IDR')
       return
     }
