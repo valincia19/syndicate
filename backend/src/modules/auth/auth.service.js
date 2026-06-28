@@ -48,9 +48,13 @@ class AuthService {
       throw new AppError('Invalid email format', 400);
     }
 
-    if (!password || password.length < 6) {
+    // A07 - Weak password policy
+    if (!password || password.length < 8) {
       logger.warn(context, `[Step 1/5 Failed] Password length insufficient for email=${email.toLowerCase()}`);
-      throw new AppError('Password must be at least 6 characters long', 400);
+      throw new AppError('Password must be at least 8 characters long', 400);
+    }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      throw new AppError('Password must contain at least one letter and one number', 400);
     }
 
     // ── Username Validation (if provided) ─────────────────────
@@ -501,9 +505,12 @@ class AuthService {
       throw new AppError('User not found', 404);
     }
 
-    // Validate new password strength
-    if (!newPassword || newPassword.length < 6) {
-      throw new AppError('Password must be at least 6 characters long', 400);
+    // A07 - Validate new password strength
+    if (!newPassword || newPassword.length < 8) {
+      throw new AppError('Password must be at least 8 characters long', 400);
+    }
+    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      throw new AppError('Password must contain at least one letter and one number', 400);
     }
 
     // Hash the new password

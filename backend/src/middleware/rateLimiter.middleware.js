@@ -1,10 +1,11 @@
 /**
  * Rate Limiting Middleware (Redis-backed + In-Memory Fallback)
- * 
- * Uses Upstash Redis for distributed rate limiting across multiple instances.
- * Falls back to in-memory Map if Redis is unavailable.
- * 
- * Strategy: Sliding window with atomic Redis operations
+ * OWASP A04 - Insecure Design prevention
+ *
+ * Strategy: Atomic INCR + EXPIRE (tidak ada race condition)
+ * - INCR buat key baru otomatis dengan value 1
+ * - EXPIRE di-set hanya pada request pertama (count === 1)
+ * - Tidak perlu GET dulu → tidak ada TOCTOU race condition
  */
 
 const env = require('../config/env');
@@ -12,37 +13,29 @@ const { getRedis } = require('../config/redis');
 const logger = require('../config/logger');
 
 // ============================================================
-// IN-MEMORY FALLBACK (used when Redis is unavailable)
+// IN-MEMORY FALLBACK
 // ============================================================
 const memoryStore = new Map();
 
-const checkMemoryRate = (identifier) => {
+const checkMemoryRate = (identifier, windowMs = env.rateLimit.windowMs, max = env.rateLimit.maxRequests) => {
   const now = Date.now();
-
-  if (!memoryStore.has(identifier)) {
-    memoryStore.set(identifier, { count: 1, resetTime: now + env.rateLimit.windowMs });
-    return { allowed: true };
-  }
-
   const record = memoryStore.get(identifier);
 
-  if (now > record.resetTime) {
-    record.count = 1;
-    record.resetTime = now + env.rateLimit.windowMs;
-    return { allowed: true };
+  if (!record || now > record.resetTime) {
+    memoryStore.set(identifier, { count: 1, resetTime: now + windowMs });
+    return { allowed: true, remaining: max - 1 };
   }
 
   record.count++;
-
-  if (record.count > env.rateLimit.maxRequests) {
+  if (record.count > max) {
     const retryAfter = Math.ceil((record.resetTime - now) / 1000);
-    return { allowed: false, retryAfter };
+    return { allowed: false, retryAfter, remaining: 0 };
   }
 
-  return { allowed: true };
+  return { allowed: true, remaining: max - record.count };
 };
 
-// Cleanup old in-memory records every hour
+// Cleanup stale in-memory records setiap jam
 setInterval(() => {
   const now = Date.now();
   for (const [id, record] of memoryStore.entries()) {
@@ -51,72 +44,59 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 // ============================================================
-// REDIS-BASED RATE LIMITER (sliding window with atomic ops)
+// REDIS RATE LIMITER — ATOMIC (no race condition)
 // ============================================================
-const checkRedisRate = async (identifier) => {
+/**
+ * Gunakan INCR + EXPIRE yang fully atomic:
+ * - INCR: jika key tidak ada, Redis buat dengan value 1 (atomic)
+ * - EXPIRE: set TTL hanya pada first request (count === 1)
+ * - Tidak ada GET dulu → tidak ada TOCTOU race
+ */
+const checkRedisRate = async (key, windowSeconds, max) => {
   const redis = getRedis();
-  if (!redis) return null; // Signal to use fallback
-
-  const key = `ratelimit:${identifier}`;
-  const windowSeconds = Math.ceil(env.rateLimit.windowMs / 1000);
+  if (!redis) return null;
 
   try {
-    // ATOMIC OPERATION: Check if key exists
-    const existing = await redis.get(key);
+    const count = await redis.incr(key);
 
-    if (!existing) {
-      // First request in window: SET with NX and EX atomically
-      // This ensures TTL is ALWAYS set from the start, no race condition
-      await redis.set(key, '1', { ex: windowSeconds, nx: true });
-      
-      return {
-        allowed: true,
-        remaining: env.rateLimit.maxRequests - 1,
-      };
-    } else {
-      // Key exists, increment atomically
-      const current = await redis.incr(key);
-      
-      // Get TTL (should already be set from initial SET)
+    // Set expiry hanya pada request pertama — atomic dengan INCR
+    if (count === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+
+    if (count > max) {
       const ttl = await redis.ttl(key);
       const retryAfter = ttl > 0 ? ttl : windowSeconds;
-
-      if (current > env.rateLimit.maxRequests) {
-        return { allowed: false, retryAfter, remaining: 0 };
-      }
-
-      return {
-        allowed: true,
-        remaining: env.rateLimit.maxRequests - current,
-      };
+      return { allowed: false, retryAfter, remaining: 0 };
     }
+
+    return { allowed: true, remaining: max - count };
   } catch (error) {
-    // Redis error → fallback to memory
-    logger.warn('RateLimiter', 'Redis rate limit error, falling back', { error: error.message });
+    logger.warn('RateLimiter', 'Redis error, falling back to memory', { error: error.message });
     return null;
   }
 };
 
 // ============================================================
-// MAIN MIDDLEWARE
+// MAIN MIDDLEWARE (global rate limit)
 // ============================================================
 const rateLimiter = async (req, res, next) => {
-  const identifier = req.ip || req.connection.remoteAddress;
+  const identifier = req.ip || req.socket?.remoteAddress || 'unknown';
+  const windowSeconds = Math.ceil(env.rateLimit.windowMs / 1000);
+  const max = env.rateLimit.maxRequests;
+  const key = `ratelimit:global:${identifier}`;
 
-  // Try Redis first, fallback to memory
-  let result = await checkRedisRate(identifier);
+  let result = await checkRedisRate(key, windowSeconds, max);
   let source = 'redis';
 
   if (!result) {
-    result = checkMemoryRate(identifier);
+    result = checkMemoryRate(`global:${identifier}`);
     source = 'memory';
   }
 
-  // Set rate limit headers
+  res.set('X-RateLimit-Limit', max);
   if (result.remaining !== undefined) {
-    res.set('X-RateLimit-Limit', env.rateLimit.maxRequests);
     res.set('X-RateLimit-Remaining', Math.max(0, result.remaining));
-    res.set('X-RateLimit-Source', source);
   }
 
   if (!result.allowed) {
@@ -132,104 +112,54 @@ const rateLimiter = async (req, res, next) => {
   next();
 };
 
-/**
- * Create a custom rate limiter middleware with specific limits.
- * Useful for applying different limits to different endpoints
- * (e.g., stricter limits on public loader endpoints).
- *
- * @param {Object} options
- * @param {number} options.windowMs - Time window in ms (default: 60000)
- * @param {number} options.max - Max requests per window (default: 60)
- * @returns {Function} Express middleware
- */
+// ============================================================
+// FACTORY — custom rate limiter per endpoint
+// ============================================================
 const createRateLimiter = (options = {}) => {
-  const windowMs = options.windowMs || 60 * 1000; // 1 minute default
-  const max = options.max || 60; // 60 requests per minute default
+  const windowMs = options.windowMs || 60 * 1000;
+  const max = options.max || 60;
+  const windowSeconds = Math.ceil(windowMs / 1000);
+  const name = options.name || 'custom';
 
   return async (req, res, next) => {
-    const identifier = req.ip || req.connection.remoteAddress;
-    const key = `ratelimit:${options.name || 'custom'}:${identifier}`;
+    const identifier = req.ip || req.socket?.remoteAddress || 'unknown';
+    const key = `ratelimit:${name}:${identifier}`;
 
-    // Try Redis first
-    const redis = getRedis();
-    if (redis) {
-      try {
-        const current = await redis.get(key);
-        if (!current) {
-          await redis.set(key, '1', { ex: Math.ceil(windowMs / 1000), nx: true });
-          return next();
-        }
-        const count = await redis.incr(key);
-        if (count > max) {
-          return res.status(429).json({
-            status: 'error',
-            statusCode: 429,
-            message: 'Too many requests. Please try again later.',
-            retryAfter: `${Math.ceil(windowMs / 1000)} seconds`,
-          });
-        }
-        return next();
-      } catch {
-        // Redis error - fall through to in-memory
-      }
+    let result = await checkRedisRate(key, windowSeconds, max);
+
+    if (!result) {
+      result = checkMemoryRate(`${name}:${identifier}`, windowMs, max);
     }
 
-    // In-memory fallback
-    const memKey = `${options.name || 'custom'}:${identifier}`;
-    const check = checkMemoryRate(memKey);
-    if (!check.allowed) {
+    if (!result.allowed) {
       return res.status(429).json({
         status: 'error',
         statusCode: 429,
         message: 'Too many requests. Please try again later.',
-        retryAfter: `${check.retryAfter} seconds`,
+        retryAfter: `${result.retryAfter} seconds`,
       });
     }
+
     next();
   };
 };
 
-/**
- * Aggressive Rate Limiter for Auth Routes (login/register)
- * Limit: 10 requests per 15 minutes per IP to prevent brute-force attacks
- */
+// Auth: 10 attempts per 15 menit (anti-bruteforce A07)
 const authRateLimiter = createRateLimiter({
   name: 'auth_bruteforce',
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 attempts per 15 mins
+  windowMs: 15 * 60 * 1000,
+  max: 10,
 });
 
-/**
- * Rate limiter check for WebSocket Upgrade requests (HTTP Handshake)
- * Limit: 10 connection upgrade attempts per minute per IP
- */
+// WebSocket upgrade: 10 connections per menit per IP
 const checkWsUpgradeRate = async (ip) => {
-  const windowMs = 60 * 1000; // 1 minute
-  const max = 10;
   const key = `ratelimit:ws_upgrade:${ip}`;
-
-  const redis = getRedis();
-  if (redis) {
-    try {
-      const current = await redis.get(key);
-      if (!current) {
-        await redis.set(key, '1', { ex: 60, nx: true });
-        return { allowed: true };
-      }
-      const count = await redis.incr(key);
-      if (count > max) return { allowed: false };
-      return { allowed: true };
-    } catch {
-      // Fall through to memory
-    }
-  }
-
-  const check = checkMemoryRate(`ws_upgrade:${ip}`);
-  return check;
+  const result = await checkRedisRate(key, 60, 10);
+  if (result) return result;
+  return checkMemoryRate(`ws_upgrade:${ip}`, 60 * 1000, 10);
 };
 
 module.exports = rateLimiter;
 module.exports.createRateLimiter = createRateLimiter;
 module.exports.authRateLimiter = authRateLimiter;
 module.exports.checkWsUpgradeRate = checkWsUpgradeRate;
-
