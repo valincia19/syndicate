@@ -6,7 +6,7 @@ import {
   TrendingUp, Play, Orbit, Radio, Crosshair,
   Target, ScanLine, Satellite, Radar,
   Shield, Hexagon, Siren, CircleDot, Diamond, Square,
-  ShieldAlert, Activity, BarChart3, Settings,
+  ShieldAlert, ShieldCheck, Activity, BarChart3, Settings,
   MessageCircle, Link2, Users, Clock, Key, Server, UserCheck, Globe, ChevronRight
 } from "lucide-react"
 

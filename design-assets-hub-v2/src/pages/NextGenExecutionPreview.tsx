@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Gauge, Zap, Cpu, Activity, Timer, CheckCircle2,
+  Gauge, Zap, Cpu, Timer, CheckCircle2,
   TrendingUp, Play, Orbit, Radio, Crosshair,
   Target, ScanLine, Satellite, Radar, ArrowLeft
 } from "lucide-react";

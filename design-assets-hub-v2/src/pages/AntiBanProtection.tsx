@@ -4,14 +4,13 @@ import { cn } from "../lib/utils";
 import {
   Shield, Hexagon, Siren, CircleDot, Diamond, Square,
   X, Target, ShieldCheck, ArrowLeft,
-  RefreshCw, Activity, Zap, ShieldAlert,
+  RefreshCw, Activity, ShieldAlert,
   Bell, BarChart3, Settings, Cpu
 } from "lucide-react";
 
 // ─── Constants (Zinc & Honey Gold Palette matching Hero 3) ───
 const GOLD = "oklch(0.78 0.14 65)";
 const ACCENT = "oklch(0.78 0.14 65)";
-const DIM = "oklch(0.55 0 0)"; // Neutral gray matching text-zinc-500
 const GREEN = "oklch(0.72 0.19 150)";
 const AMBER = "oklch(0.79 0.15 85)";
 
