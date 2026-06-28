@@ -19,7 +19,7 @@ import { DialogDemo } from "../examples/DialogDemo"
 import { DropdownMenuDemo } from "../examples/DropdownMenuDemo"
 import { FormDemo } from "../examples/FormDemo"
 import { BadgeDemo } from "../examples/BadgeDemo"
-import { CardDemo } from "../examples/CardCompositeDemo"
+import { CardCompositeDemo } from "../examples/CardCompositeDemo"
 import { TooltipDemo } from "../examples/TooltipDemo"
 import { CarouselDemo } from "../examples/CarouselDemo"
 import { ChartDemo } from "../examples/ChartDemo"
@@ -74,7 +74,7 @@ export default function ComponentCatalog() {
             <BadgeDemo />
           </DemoCard>
           <DemoCard title="Cards">
-            <CardDemo />
+            <CardCompositeDemo />
           </DemoCard>
           <DemoCard title="Tooltips">
             <TooltipDemo />
