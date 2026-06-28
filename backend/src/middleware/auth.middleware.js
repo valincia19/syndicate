@@ -15,37 +15,62 @@ const UserModel = require('../modules/auth/auth.model');
 const cacheUtility = require('../utils/cache.utility');
 
 const authenticateToken = async (req, res, next) => {
+  const httpMethod = req.method;
+  const path = req.originalUrl || req.path;
+  const context = 'MIDDLEWARE:AUTH';
+
   try {
     let token = null;
     let source = 'none';
-    
-    logger.debug('AuthMiddleware', 'Incoming request', { 
-      path: req.path, 
-      hasAuthHeader: !!req.headers.authorization,
-      hasCookie: !!(req.cookies && req.cookies.auth_token),
-    });
-    
+
     // 1. Try Authorization header (primary method)
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
       source = 'header';
     }
-    
+
     // 2. Fallback: httpOnly cookie (automatically sent by browser)
     if (!token && req.cookies && req.cookies.auth_token) {
       token = req.cookies.auth_token;
       source = 'cookie';
     }
-    
+
     if (!token) {
-      logger.debug('AuthMiddleware', 'No token found', { path: req.path });
+      logger.warn(context, 'Access denied: No authentication token provided', {
+        httpMethod,
+        path,
+        tokenStatus: 'missing',
+        decision: 'REJECT_AND_REDIRECT',
+      });
       throw new AppError('No token provided. Please login.', 401);
     }
-    
+
     // Verify token
-    const decoded = jwt.verify(token, env.jwtSecret);
-    
+    let decoded;
+    try {
+      decoded = jwt.verify(token, env.jwtSecret);
+    } catch (jwtError) {
+      if (jwtError.name === 'TokenExpiredError') {
+        logger.warn(context, 'Access denied: Authentication token has expired', {
+          httpMethod,
+          path,
+          tokenSource: source,
+          tokenStatus: 'expired',
+          decision: 'REJECT_AND_REDIRECT',
+        });
+        throw new AppError('Token expired. Please login again.', 401);
+      }
+      logger.warn(context, 'Access denied: Authentication token is invalid', {
+        httpMethod,
+        path,
+        tokenSource: source,
+        tokenStatus: 'invalid',
+        decision: 'REJECT_AND_REDIRECT',
+      });
+      throw new AppError('Invalid token. Please login again.', 401);
+    }
+
     // Fetch latest user status from Redis cache / DB (5 min TTL)
     const cacheKey = `cache:user_profile:${decoded.id}`;
     const user = await cacheUtility.getOrSet(
@@ -58,12 +83,25 @@ const authenticateToken = async (req, res, next) => {
 
     // ── SECURITY ENFORCEMENT: Account existence & suspension checks ────────
     if (!user) {
+      logger.warn(context, `Access denied: User ID ${decoded.id} no longer exists`, {
+        httpMethod,
+        path,
+        userId: decoded.id,
+        decision: 'REJECT_AND_REDIRECT',
+      });
       throw new AppError('Account no longer exists.', 401);
     }
 
     const isSuspended = Number(user.suspended) === 1 || Boolean(user.suspended) === true || user.suspended == 1;
     if (isSuspended) {
       await cacheUtility.del(cacheKey);
+      logger.warn(context, `Access denied: Account suspended for email=${user.email}`, {
+        httpMethod,
+        path,
+        userId: user.id,
+        email: user.email,
+        decision: 'REJECT_SUSPENDED',
+      });
       throw new AppError('Your account has been suspended.', 403);
     }
 
@@ -77,15 +115,19 @@ const authenticateToken = async (req, res, next) => {
       verified: Boolean(user.verified === true || user.verified === 1 || user.verified == 1),
       discord_id: user.discord_id || null,
     };
-    
+
+    logger.info(context, `Protected route access granted for email=${user.email}`, {
+      httpMethod,
+      path,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tokenSource: source,
+      decision: 'ALLOW',
+    });
+
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return next(new AppError('Invalid token. Please login again.', 401));
-    }
-    if (error.name === 'TokenExpiredError') {
-      return next(new AppError('Token expired. Please login again.', 401));
-    }
     next(error);
   }
 };

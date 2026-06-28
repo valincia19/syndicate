@@ -26,45 +26,47 @@ class AuthService {
    * Accepts: name, email, password, username?, avatar?
    */
   async register(userData) {
+    const context = 'AUTH:REGISTER';
     const {
       name, email, password,
       username, avatar,
       role = 'user'
     } = userData;
 
+    logger.info(context, `[Step 1/5] Incoming registration request for email=${email ? email.toLowerCase() : 'N/A'}`);
+
     // ── Required Field Validation ─────────────────────────────
     if (!name || !email || !password) {
+      logger.warn(context, '[Step 1/5 Failed] Required fields missing during registration');
       throw new AppError('Name, email, and password are required', 400);
     }
 
     // ── Email Validation ──────────────────────────────────────
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      logger.warn(context, `[Step 1/5 Failed] Invalid email format: ${email}`);
       throw new AppError('Invalid email format', 400);
     }
 
-    // ── Password Strength ─────────────────────────────────────
-    // Minimum 8 chars, must contain at least one letter and one number.
-    // This is enforced for new registrations only; existing users with
-    // legacy 6-char passwords keep their accounts (backward compat).
     if (!password || password.length < 6) {
+      logger.warn(context, `[Step 1/5 Failed] Password length insufficient for email=${email.toLowerCase()}`);
       throw new AppError('Password must be at least 6 characters long', 400);
     }
 
     // ── Username Validation (if provided) ─────────────────────
     if (username) {
-      // Format: alphanumeric + underscore, 3-50 chars
       const usernameRegex = /^[a-zA-Z0-9_]{3,50}$/;
       if (!usernameRegex.test(username)) {
+        logger.warn(context, `[Step 1/5 Failed] Invalid username format: ${username}`);
         throw new AppError(
           'Username must be 3-50 characters, alphanumeric and underscore only',
           400
         );
       }
 
-      // Check duplicate username
       const existingUsername = await UserModel.findByUsername(username);
       if (existingUsername) {
+        logger.warn(context, `[Step 1/5 Failed] Username already taken: ${username}`);
         throw new AppError('Username already taken', 409);
       }
     }
@@ -72,11 +74,15 @@ class AuthService {
     // ── Check Duplicate Email ─────────────────────────────────
     const existingUser = await UserModel.findByEmail(email.toLowerCase());
     if (existingUser) {
+      logger.warn(context, `[Step 1/5 Failed] Email already registered: ${email.toLowerCase()}`);
       throw new AppError('Email already registered', 409);
     }
 
+    logger.info(context, `[Step 2/5] Input validation passed for email=${email.toLowerCase()}. Hashing password...`);
+
     // ── Hash Password (bcrypt 12 rounds) ──────────────────────
     const hashedPassword = await bcrypt.hash(password, 12);
+    logger.info(context, `[Step 3/5] Password hashed successfully. Inserting user into PostgreSQL DB...`);
 
     // ── Insert to PostgreSQL ──────────────────────────────────
     const newUser = await UserModel.create({
@@ -89,6 +95,8 @@ class AuthService {
       verified: 0,
     });
 
+    logger.info(context, `[Step 4/5] User inserted to DB successfully with ID=${newUser.id}. Preparing Mailtrap verification email...`);
+
     // ── Generate and send email verification code automatically ────
     try {
       const redis = getRedis();
@@ -97,10 +105,15 @@ class AuthService {
         await redis.set(`verify_code:${newUser.id}`, verificationCode, { ex: 600 });
         const emailUtil = require('../../utils/email');
         await emailUtil.sendVerificationEmail(newUser.email, verificationCode);
+        logger.info(context, `[Step 4.1/5] Verification code sent via Mailtrap to email=${newUser.email}`);
+      } else {
+        logger.warn(context, `[Step 4.1/5 Skipped] Redis unavailable, skipping verification code dispatch`);
       }
     } catch (err) {
-      logger.error('Service:Auth', 'Failed to send automatic verification email on register', { error: err.message });
+      logger.error(context, `[Step 4.1/5 Failed] Failed to send automatic verification email: ${err.message}`, { error: err.stack });
     }
+
+    logger.info(context, `[Step 5/5] Generating JWT token and finishing registration for ID=${newUser.id}`);
 
     // ── Generate JWT Token (auto-login after registration) ────
     const token = jwt.sign(
@@ -126,29 +139,40 @@ class AuthService {
    * Login user
    */
   async login(credentials) {
+    const context = 'AUTH:LOGIN';
     const { email, password } = credentials;
+
+    logger.info(context, `[Step 1/4] Incoming login request for email=${email ? email.toLowerCase() : 'N/A'}`);
 
     // ── Input Validation ──────────────────────────────────────
     if (!email || !password) {
+      logger.warn(context, '[Step 1/4 Failed] Email or password missing');
       throw new AppError('Email and password are required', 400);
     }
 
-    // ── Find User (includes password for verification) ────────
+    // ── Find User ─────────────────────────────────────────────
     const user = await UserModel.findByEmail(email.toLowerCase());
     if (!user) {
+      logger.warn(context, `[Step 2/4 Failed] User lookup failed: email=${email.toLowerCase()} not found in DB`);
       throw new AppError('Invalid email or password', 401);
     }
 
-    // ── Verify Password (bcrypt compare) ──────────────────────
+    logger.info(context, `[Step 2/4] User found in DB (ID=${user.id}). Verifying password hash...`);
+
+    // ── Verify Password ───────────────────────────────────────
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      logger.warn(context, `[Step 3/4 Failed] Password mismatch for email=${email.toLowerCase()}`);
       throw new AppError('Invalid email or password', 401);
     }
 
     // ── Check Suspended Status ────────────────────────────────
     if (user.suspended) {
+      logger.warn(context, `[Step 3/4 Failed] Login blocked for suspended account ID=${user.id}`);
       throw new AppError('Your account has been suspended. Please contact support.', 403);
     }
+
+    logger.info(context, `[Step 3/4] Password verified successfully. Issuing JWT session token for ID=${user.id}...`);
 
     // ── Generate JWT Token ────────────────────────────────────
     const token = jwt.sign(
@@ -164,7 +188,8 @@ class AuthService {
       { expiresIn: env.jwtExpiresIn }
     );
 
-    // ── Return user (without password) + token ────────────────
+    logger.info(context, `[Step 4/4] JWT session token generated successfully for email=${user.email}`);
+
     const { password: _, ...userWithoutPassword } = user;
 
     return {

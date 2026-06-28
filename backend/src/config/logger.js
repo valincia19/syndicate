@@ -21,7 +21,7 @@ const COLORS = {
 };
 
 const isProduction = process.env.NODE_ENV === 'production';
-const currentLogLevel = LOG_LEVELS[isProduction ? 'warn' : 'debug'];
+const currentLogLevel = LOG_LEVELS[process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug')];
 
 const formatTimestamp = () => new Date().toISOString();
 
@@ -29,17 +29,17 @@ const formatMessage = (level, module, message, data = null) => {
   const timestamp = formatTimestamp();
 
   if (isProduction) {
-    // Production: JSON format for log aggregation
+    // Production: Structured JSON format for cloud log aggregators
     return JSON.stringify({
       timestamp,
-      level,
-      module,
+      level: level.toUpperCase(),
+      context: module,
       message,
-      ...(data && { data }),
+      ...(data && { metadata: data }),
     });
   }
 
-  // Development: Pretty console output
+  // Development: Rich readable colorized output
   const color = COLORS[level] || COLORS.info;
   const prefix = `[${timestamp}] [${level.toUpperCase()}] [${module}]`;
   const dataStr = data ? ` ${JSON.stringify(data)}` : '';
