@@ -246,7 +246,7 @@ export default function PricingSection() {
                 <div className="flex flex-col items-start justify-start gap-2 self-stretch">
                   <div className="flex flex-col items-start justify-start gap-1">
                     <div className="relative flex h-15 items-center text-5xl font-medium">
-                      <span>{t("planFreePrice")}</span>
+                      <span>{detectedCurrency === 'IDR' ? 'Rp 0' : formatPriceDisplay(0, detectedCurrency)}</span>
                     </div>
                     <div className="text-sm font-medium text-muted-foreground">
                       {t("planFreeSub")}
