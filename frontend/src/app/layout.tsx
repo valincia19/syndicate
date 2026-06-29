@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { AuthProvider } from "@/context/auth-context";
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { CookieConsent } from "@/components/shared/cookie-consent";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
