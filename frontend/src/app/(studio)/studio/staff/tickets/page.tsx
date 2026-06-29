@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/context/auth-context'
 import { api } from '@/lib/api'
 import { useTicketDashboard } from '@/hooks/use-ticket-dashboard'
-import { Headphones, CheckCircle, Clock, AlertCircle, User, MessageSquare, Loader2, ChevronRight, Sparkles } from 'lucide-react'
+import { Headphones, CheckCircle, Clock, AlertCircle, User, MessageSquare, Loader2, ChevronRight, Sparkles, Trash2, X } from 'lucide-react'
 
 type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 
@@ -54,6 +54,29 @@ function formatDateTime(dateStr: string): string {
   })
 }
 
+function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', h)
+    return () => document.removeEventListener('keydown', h)
+  }, [open, onClose])
+  if (!open) return null
+  return (
+    <div ref={ref} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={(e) => { if (e.target === ref.current) onClose() }}>
+      <div className="w-[460px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">{title}</h3>
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="px-5 py-4">{children}</div>
+      </div>
+    </div>
+  )
+}
+
 export default function StaffTicketsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
@@ -70,14 +93,32 @@ export default function StaffTicketsPage() {
     return () => window.removeEventListener('click', handleClose)
   }, [])
 
-  const handleDeleteTicket = async (ticketId: string) => {
-    if (!confirm('Are you sure you want to delete this ticket?')) return
+  const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [dialogError, setDialogError] = useState<string | null>(null)
+
+  const handleDeleteTicketClick = (ticketId: string) => {
     setContextMenu(null)
+    const target = tickets.find((t) => t.id === ticketId)
+    if (target) {
+      setTicketToDelete(target)
+      setDialogError(null)
+    }
+  }
+
+  const handleDeleteTicketSubmit = async () => {
+    if (!ticketToDelete) return
+    setIsDeleting(true)
+    setDialogError(null)
     try {
-      await api.delete(`/v1/tickets/${ticketId}`)
-      setTickets((prev) => prev.filter((t) => t.id !== ticketId))
+      await api.delete(`/v1/tickets/${ticketToDelete.id}`)
+      setTickets((prev) => prev.filter((t) => t.id !== ticketToDelete.id))
+      setTicketToDelete(null)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err))
+      const errMsg = err instanceof Error ? err.message : String(err)
+      setDialogError(errMsg)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -311,13 +352,52 @@ export default function StaffTicketsPage() {
           onClick={(e) => e.stopPropagation()}
         >
           <button
-            onClick={() => handleDeleteTicket(contextMenu.ticketId)}
+            onClick={() => handleDeleteTicketClick(contextMenu.ticketId)}
             className="hover:bg-destructive/10 hover:text-destructive relative flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold font-mono text-red-500 outline-hidden transition-colors"
           >
             Delete Ticket
           </button>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={ticketToDelete !== null} onClose={() => { if (!isDeleting) setTicketToDelete(null) }} title="Delete Ticket">
+        {ticketToDelete && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg bg-red-500/5 border border-red-500/20">
+              <Trash2 className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-1">Delete this ticket?</p>
+                <p className="text-[11px] text-muted-foreground font-mono">
+                  Ticket <span className="text-foreground font-bold">{ticketToDelete.code}</span> ({ticketToDelete.subject}) will be permanently removed.
+                </p>
+              </div>
+            </div>
+            {dialogError && (
+              <div className="px-3 py-2 rounded-md bg-red-500/5 border border-red-500/20 text-[11px] font-mono text-red-600 dark:text-red-500">
+                {dialogError}
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={() => setTicketToDelete(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-[11px] font-mono text-muted-foreground hover:text-foreground border border-border rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteTicketSubmit}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white text-[11px] font-mono rounded-lg hover:bg-red-700 active:scale-98 transition-all font-bold cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
