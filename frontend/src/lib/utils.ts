@@ -5,6 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getAvatarUrl(avatar: string | null | undefined, _email?: string | null): string | null {
   if (!avatar || avatar === "null" || avatar === "undefined") {
     return null

@@ -86,6 +86,10 @@ const connectRedis = async () => {
         return redisClient.incr(key);
       },
 
+      async expire(key, seconds) {
+        return redisClient.expire(key, seconds);
+      },
+
       async ttl(key) {
         return redisClient.ttl(key);
       },

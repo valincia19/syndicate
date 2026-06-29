@@ -151,12 +151,12 @@ const authRateLimiter = createRateLimiter({
   max: 10,
 });
 
-// WebSocket upgrade: 10 connections per menit per IP
+// WebSocket upgrade: 100 connections per menit per IP
 const checkWsUpgradeRate = async (ip) => {
   const key = `ratelimit:ws_upgrade:${ip}`;
-  const result = await checkRedisRate(key, 60, 10);
+  const result = await checkRedisRate(key, 60, 100);
   if (result) return result;
-  return checkMemoryRate(`ws_upgrade:${ip}`, 60 * 1000, 10);
+  return checkMemoryRate(`ws_upgrade:${ip}`, 60 * 1000, 100);
 };
 
 module.exports = rateLimiter;

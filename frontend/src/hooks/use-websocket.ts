@@ -20,7 +20,7 @@ import { tokenManager } from '@/lib/api'
  */
 
 const PROTOCOL_CHANNEL = 'ticket-ws.v1'
-const RECONNECT_BASE_MS = 1000
+const RECONNECT_BASE_MS = 4000
 const RECONNECT_MAX_MS = 30_000
 const PING_INTERVAL_MS = 25_000
 const MAX_ATTEMPTS = 5
