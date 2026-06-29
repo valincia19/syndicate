@@ -191,10 +191,8 @@ function setupWebSocket(server) {
   const wss = new WebSocketServer({
     noServer: true,
     handleProtocols: (protocols) => {
-      if (protocols.includes(PROTOCOL_CHANNEL)) {
-        return PROTOCOL_CHANNEL;
-      }
-      return false;
+      const list = Array.from(protocols || []);
+      return list.includes(PROTOCOL_CHANNEL) ? PROTOCOL_CHANNEL : false;
     }
   });
 
