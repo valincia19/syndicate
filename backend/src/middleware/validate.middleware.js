@@ -6,7 +6,8 @@
 const validate = (schema, source = 'body') => (req, res, next) => {
   const result = schema.safeParse(req[source]);
   if (!result.success) {
-    const formattedErrors = result.error.errors.map((e) => ({
+    const errorsArray = result.error.issues || result.error.errors || [];
+    const formattedErrors = errorsArray.map((e) => ({
       field: e.path.join('.'),
       message: e.message,
     }));
