@@ -229,7 +229,7 @@ export default function RootLayout({
         />
         <ThemeProvider>
           <LanguageProvider>
-            <Toaster position="top-right" richColors closeButton />
+            <Toaster position="top-right" closeButton />
             <CookieConsent />
             <ErrorBoundary>
               <AuthProvider>
