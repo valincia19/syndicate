@@ -215,6 +215,12 @@ class TicketModel {
     );
     return result.rows;
   }
+
+  async delete(id) {
+    const pool = getPool();
+    await pool.query('DELETE FROM ticket_messages WHERE ticket_id = $1', [id]);
+    await pool.query('DELETE FROM tickets WHERE id = $1', [id]);
+  }
 }
 
 module.exports = new TicketModel();

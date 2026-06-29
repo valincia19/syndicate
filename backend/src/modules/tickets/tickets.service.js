@@ -244,6 +244,36 @@ class TicketService {
 
     return updated;
   }
+
+  /**
+   * Delete a ticket (owner only)
+   * @param {string} ticketId - UUID
+   */
+  async deleteTicket(ticketId) {
+    const ticket = await cacheUtility.getOrSet(`cache:ticket:${ticketId}`, () => ticketModel.findById(ticketId), 600);
+
+    if (!ticket) {
+      throw new AppError('Ticket not found', 404);
+    }
+
+    // Invalidate ticket cache
+    await cacheUtility.del(`cache:ticket:${ticketId}`);
+    await cacheUtility.del(`cache:ticket_messages:${ticketId}`);
+
+    await ticketModel.delete(ticketId);
+
+    // Broadcast deletion to update dashboard clients in real-time
+    try {
+      const { wssRegistry } = require('../../config/websocket');
+      wssRegistry.broadcastToTicket(ticketId, {
+        type: 'ticket_deleted',
+      });
+    } catch (err) {
+      logger.debug('Service:Tickets', 'WebSocket deletion broadcast failed', { ticketId, error: err.message });
+    }
+
+    logger.info('Service:Tickets', 'Ticket deleted', { ticketId });
+  }
 }
 
 module.exports = new TicketService();

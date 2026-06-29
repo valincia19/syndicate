@@ -62,6 +62,24 @@ export default function StaffTicketsPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [newMsgTicketIds, setNewMsgTicketIds] = useState<Set<string>>(new Set())
   const newMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; ticketId: string } | null>(null)
+
+  useEffect(() => {
+    const handleClose = () => setContextMenu(null)
+    window.addEventListener('click', handleClose)
+    return () => window.removeEventListener('click', handleClose)
+  }, [])
+
+  const handleDeleteTicket = async (ticketId: string) => {
+    if (!confirm('Are you sure you want to delete this ticket?')) return
+    setContextMenu(null)
+    try {
+      await api.delete(`/v1/tickets/${ticketId}`)
+      setTickets((prev) => prev.filter((t) => t.id !== ticketId))
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : String(err))
+    }
+  }
 
   useEffect(() => {
     Promise.resolve().then(() => {
@@ -129,6 +147,9 @@ export default function StaffTicketsPage() {
             : t
         )
       )
+    }
+    if (event.type === 'ticket_deleted') {
+      setTickets((prev) => prev.filter((t) => t.id !== event.ticketId))
     }
   })
 
@@ -225,6 +246,16 @@ export default function StaffTicketsPage() {
                     key={ticket.id}
                     href={`/studio/staff/tickets/${ticket.id}`}
                     className={`block border ${newMsgTicketIds.has(ticket.id) ? 'border-primary/30 bg-primary/[0.02] dark:bg-primary/[0.03]' : 'border-border/50 bg-muted/10 hover:bg-muted/20 dark:hover:bg-[#121214]/30'} rounded-xl p-4 transition-all duration-200 group relative`}
+                    onContextMenu={(e) => {
+                      if (user?.role === 'owner') {
+                        e.preventDefault()
+                        setContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          ticketId: ticket.id,
+                        })
+                      }
+                    }}
                   >
                     {newMsgTicketIds.has(ticket.id) && (
                       <span className="absolute -top-1.5 -right-1.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[8px] font-mono font-bold shadow-xs animate-in fade-in zoom-in-50">
@@ -271,6 +302,20 @@ export default function StaffTicketsPage() {
               })}
             </div>
           )}
+        </div>
+      )}
+      {contextMenu && (
+        <div
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          className="fixed z-50 min-w-[8rem] overflow-hidden rounded-xl border border-border/50 bg-popover p-1 text-popover-foreground shadow-md outline-hidden animate-in fade-in-80 duration-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => handleDeleteTicket(contextMenu.ticketId)}
+            className="hover:bg-destructive/10 hover:text-destructive relative flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold font-mono text-red-500 outline-hidden transition-colors"
+          >
+            Delete Ticket
+          </button>
         </div>
       )}
     </div>

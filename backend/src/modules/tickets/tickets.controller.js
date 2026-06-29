@@ -147,6 +147,33 @@ class TicketController {
       next(error);
     }
   }
+
+  /**
+   * Delete a support ticket
+   * DELETE /v1/tickets/:id
+   */
+  async deleteTicket(req, res, next) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      await ticketService.deleteTicket(id);
+
+      // Log user activity
+      const activityService = require('../activity/activity.service');
+      await activityService.log(userId, 'delete_ticket', { 
+        ticket_id: id
+      });
+
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: 'Ticket deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new TicketController();

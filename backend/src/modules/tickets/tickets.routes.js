@@ -29,4 +29,7 @@ router.post('/:id/messages', ticketController.addReply.bind(ticketController));
 // Update ticket status (staff+ only)
 router.patch('/:id/status', authorizeRoles('staff', 'admin', 'developer', 'owner'), ticketController.updateStatus.bind(ticketController));
 
+// Delete a ticket (owner only)
+router.delete('/:id', authorizeRoles('owner'), ticketController.deleteTicket.bind(ticketController));
+
 module.exports = router;
