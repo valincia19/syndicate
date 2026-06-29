@@ -266,6 +266,51 @@ class AdminService {
     await cacheUtility.del(`cache:settings:${keyName}`);
     return keyValue;
   }
+
+  async getExecutionLogs(page = 1, limit = 20) {
+    const { getPool } = require('../../config/database');
+    const pool = getPool();
+    const offset = (page - 1) * limit;
+
+    const countRes = await pool.query('SELECT COUNT(*)::int AS count FROM execution_logs');
+    const logsRes = await pool.query(
+      'SELECT * FROM execution_logs ORDER BY date DESC LIMIT $1 OFFSET $2',
+      [limit, offset]
+    );
+
+    return {
+      total: countRes.rows[0].count,
+      page,
+      limit,
+      logs: logsRes.rows
+    };
+  }
+
+  async getExecutionKeys(page = 1, limit = 20, search = '') {
+    const { getPool } = require('../../config/database');
+    const pool = getPool();
+    const offset = (page - 1) * limit;
+
+    let countQuery = 'SELECT COUNT(*)::int AS count FROM execution_keys';
+    let dataQuery = 'SELECT * FROM execution_keys ORDER BY date DESC, count DESC LIMIT $1 OFFSET $2';
+    const params = [limit, offset];
+
+    if (search) {
+      countQuery = 'SELECT COUNT(*)::int AS count FROM execution_keys WHERE license_key ILIKE $1';
+      dataQuery = 'SELECT * FROM execution_keys WHERE license_key ILIKE $3 ORDER BY date DESC, count DESC LIMIT $1 OFFSET $2';
+      params.push(`%${search}%`);
+    }
+
+    const countRes = await pool.query(countQuery, search ? [params[2]] : []);
+    const keysRes = await pool.query(dataQuery, params);
+
+    return {
+      total: countRes.rows[0].count,
+      page,
+      limit,
+      keys: keysRes.rows
+    };
+  }
 }
 
 module.exports = new AdminService();

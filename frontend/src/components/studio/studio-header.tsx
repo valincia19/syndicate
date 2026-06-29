@@ -34,6 +34,7 @@ export function StudioHeader({ userRole }: StudioHeaderProps) {
         { name: "Users", href: "/studio/owner/users" },
         { name: "Finance", href: "/studio/owner/finance" },
         { name: "Currency", href: "/studio/owner/currency" },
+        { name: "Executions", href: "/studio/owner/executions" },
         { name: "Activity", href: "/studio/owner/activity" },
         { name: "Settings", href: "/studio/owner/settings" },
       ],

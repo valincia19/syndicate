@@ -17,6 +17,7 @@ import {
   Package,
   Ticket,
   History,
+  Terminal,
 } from "lucide-react"
 import { VSLogo } from "@/components/brand/vs-logo"
 import { useAuth } from "@/context/auth-context"
@@ -45,6 +46,7 @@ export function StudioSidebar() {
         { name: "Users", href: "/studio/owner/users", icon: Users },
         { name: "Finance", href: "/studio/owner/finance", icon: DollarSign },
         { name: "Currency", href: "/studio/owner/currency", icon: DollarSign },
+        { name: "Executions", href: "/studio/owner/executions", icon: Terminal },
         { name: "Activity", href: "/studio/owner/activity", icon: Activity },
         { name: "Settings", href: "/studio/owner/settings", icon: Settings },
       ],

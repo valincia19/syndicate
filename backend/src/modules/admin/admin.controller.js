@@ -218,17 +218,28 @@ class AdminController {
   async saveSetting(req, res, next) {
     try {
       const { key } = req.params;
-      const keyValue = req.body;
-      const settings = await adminService.saveSystemSetting(key, keyValue);
-      res.status(200).json({
-        status: 'success',
-        statusCode: 200,
-        message: 'Settings saved successfully',
-        data: settings,
-      });
-    } catch (error) {
-      next(error);
-    }
+      const data = await adminService.saveSystemSetting(key, req.body);
+      res.status(200).json({ status: 'success', statusCode: 200, message: 'Setting saved', data });
+    } catch (err) { next(err); }
+  }
+
+  async listExecutionLogs(req, res, next) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const data = await adminService.getExecutionLogs(page, limit);
+      res.status(200).json({ status: 'success', statusCode: 200, data });
+    } catch (err) { next(err); }
+  }
+
+  async listExecutionKeys(req, res, next) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const search = req.query.search || '';
+      const data = await adminService.getExecutionKeys(page, limit, search);
+      res.status(200).json({ status: 'success', statusCode: 200, data });
+    } catch (err) { next(err); }
   }
 }
 

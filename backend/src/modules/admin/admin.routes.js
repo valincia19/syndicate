@@ -31,4 +31,8 @@ router.delete('/users/:id', adminController.deleteUser.bind(adminController));
 router.get('/settings/:key', adminController.getSetting.bind(adminController));
 router.post('/settings/:key', adminController.saveSetting.bind(adminController));
 
+// Execution logs management (Owner-only)
+router.get('/executions/logs', adminController.listExecutionLogs.bind(adminController));
+router.get('/executions/keys', adminController.listExecutionKeys.bind(adminController));
+
 module.exports = router;
