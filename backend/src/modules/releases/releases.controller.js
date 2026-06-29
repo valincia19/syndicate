@@ -65,6 +65,36 @@ class ReleaseController {
         return next();
       }
       if (!prefix) throw new AppError('Prefix is required', 400);
+
+      // Traffic Splitting & Masking Flow (ponytail: inline 403 response)
+      const userAgent = req.headers['user-agent'] || '';
+      const accept = req.headers['accept'] || '';
+      const isExecutor = /RobloxApp/i.test(userAgent) || req.headers['x-executor'] || req.headers['x-valinc-handshake'];
+      const isBlockedAgent = /Mozilla|Chrome|Safari|curl|wget/i.test(userAgent) || accept.includes('text/html');
+
+      if (!isExecutor || isBlockedAgent) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.status(403).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>403 Forbidden</title>
+  <style>
+    body { background: #13111c; color: #e1e0e5; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { border: 1px solid rgba(255,255,255,0.1); background: #1b1924; padding: 24px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; max-width: 380px; }
+    h1 { color: #ff5555; margin-top: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 2px; }
+    p { font-size: 12px; color: #a19fb0; line-height: 1.5; margin: 16px 0 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>403 Forbidden</h1>
+    <p>Direct script file access is restricted. Please execute via the loader in-game.</p>
+  </div>
+</body>
+</html>`);
+      }
+
       const result = await releaseService.getLoaderContent(prefix);
       // Record execution asynchronously with optional key tracking
       ExecutionModel.recordExecution(key).catch(err =>
