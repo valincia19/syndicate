@@ -79,49 +79,55 @@ class ReleaseController {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>403 Forbidden</title>
+  <title>Access Denied (403)</title>
   <style>
-    body { background: #13111c; color: #e1e0e5; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 16px; box-sizing: border-box; }
-    .container { position: relative; display: flex; flex-direction: column; items-center: justify-content: center; text-align: center; max-width: 440px; width: 100%; gap: 24px; }
-    .glow { position: absolute; z-index: -1; width: 280px; height: 280px; border-radius: 50%; background: rgba(158, 77, 245, 0.08); filter: blur(80px); top: 50%; left: 50%; transform: translate(-50%, -50%); }
-    .badge { width: 56px; height: 56px; border-radius: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    h1 { font-size: 10px; font-weight: bold; tracking: 0.3em; color: #ef4444; text-transform: uppercase; margin: 0 0 8px; letter-spacing: 3px; }
-    h2 { font-size: 22px; font-weight: 800; color: #ffffff; text-transform: uppercase; margin: 0 0 12px; }
-    p { font-size: 12px; color: #8f8d9b; line-height: 1.6; margin: 0 0 24px; }
-    .terminal { border: 1px solid rgba(255,255,255,0.08); background: rgba(21, 20, 28, 0.9); border-radius: 8px; overflow: hidden; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; }
-    .term-hdr { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; font-size: 9px; font-weight: bold; text-transform: uppercase; color: #8f8d9b; letter-spacing: 1px; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; }
-    .term-body { padding: 16px; font-mono: monospace; font-size: 10px; line-height: 1.5; color: #a19fb0; }
-    .red-txt { color: #f87171; }
-    .dim-txt { color: #52525b; }
-    .btn { display: inline-block; padding: 10px 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; background: #ffffff; color: #13111c; border-radius: 6px; text-decoration: none; font-family: monospace; transition: opacity 0.2s; margin-top: 24px; }
-    .btn:hover { opacity: 0.9; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    body { background: #09090b; color: #f4f4f5; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 16px; box-sizing: border-box; }
+    .security-vault { position: relative; max-width: 480px; width: 100%; border: 1px solid rgba(239, 68, 68, 0.15); background: #121214; border-radius: 6px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+    .glow-red { position: absolute; z-index: 0; width: 320px; height: 320px; border-radius: 50%; background: rgba(239, 68, 68, 0.04); filter: blur(100px); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+    .header-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(239, 68, 68, 0.05); border-bottom: 1px solid rgba(239, 68, 68, 0.15); font-size: 10px; font-weight: bold; letter-spacing: 1.5px; color: #ef4444; }
+    .ping-container { display: flex; align-items: center; gap: 8px; }
+    .pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: flash 1.5s infinite; }
+    .content-box { position: relative; z-index: 1; padding: 32px 24px; text-align: center; }
+    .lock-icon { font-size: 28px; line-height: 1; margin-bottom: 20px; color: #ef4444; }
+    h1 { font-size: 20px; font-weight: 900; margin: 0 0 10px; letter-spacing: -0.5px; color: #ffffff; text-transform: uppercase; }
+    p { font-size: 11px; color: #a1a1aa; line-height: 1.6; margin: 0 auto 28px; max-width: 360px; }
+    .console-frame { border: 1px solid rgba(255,255,255,0.06); background: #0c0a0f; border-radius: 4px; overflow: hidden; text-align: left; }
+    .console-title { padding: 8px 12px; font-size: 9px; font-weight: bold; color: #71717a; text-transform: uppercase; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); letter-spacing: 1px; }
+    .console-logs { padding: 12px; font-size: 10px; line-height: 1.6; color: #d4d4d8; }
+    .status-blocked { color: #f87171; font-weight: bold; }
+    .status-info { color: #a1a1aa; }
+    .status-dim { color: #52525b; }
+    .action-btn { display: inline-block; padding: 10px 24px; font-size: 10px; font-weight: bold; text-transform: uppercase; background: #ef4444; color: #ffffff; border-radius: 4px; text-decoration: none; border: 1px solid #dc2626; transition: background-color 0.2s, box-shadow 0.2s; margin-top: 28px; cursor: pointer; }
+    .action-btn:hover { background: #dc2626; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
+    @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="glow"></div>
-    <div>
-      <div class="badge">⚠️</div>
-      <h1>Error Code: 403_ACCESS_DENIED</h1>
-      <h2>Security Check Failed</h2>
-      <p>Direct script file access is restricted. Please execute via the loader in-game.</p>
+  <div class="security-vault">
+    <div class="glow-red"></div>
+    <div class="header-bar">
+      <span>SECURE ENGINE GATEWAY</span>
+      <div class="ping-container">
+        <span>GATEWAY ACTIVE</span>
+        <div class="pulse-dot"></div>
+      </div>
+    </div>
+    <div class="content-box">
+      <div class="lock-icon">🔒</div>
+      <h1>HTTP 403: Restricted</h1>
+      <p>Direct query of script file asset is restricted. Please run within active RobloxApp executor client only.</p>
       
-      <div class="terminal">
-        <div class="term-hdr">
-          <span>Syndicate Security Daemon</span>
-          <div class="dot"></div>
-        </div>
-        <div class="term-body">
-          <div class="red-txt">[ERROR] HTTP-403: Access to raw asset blocked</div>
-          <div>[TRACE] Handshake failed: Executor credentials nil</div>
-          <div>[CACHE] Edge bypass: Blocked direct request</div>
-          <div class="dim-txt">[SYSTEM] Awaiting RobloxApp executor environment...</div>
+      <div class="console-frame">
+        <div class="console-title">Security Trace Terminal</div>
+        <div class="console-logs">
+          <div><span class="status-blocked">[BLOCKED]</span> Connection request direct edge bypass</div>
+          <div><span class="status-info">[RESOLVE]</span> Client handshake verified: FALSE</div>
+          <div><span class="status-info">[SESSION]</span> Header mapping payload resolved to null</div>
+          <div class="status-dim">[MONITOR] Security daemon waiting for valid executor context...</div>
         </div>
       </div>
       
-      <a href="/" class="btn">Return to Base</a>
+      <a href="/" class="action-btn">Return to Base</a>
     </div>
   </div>
 </body>
