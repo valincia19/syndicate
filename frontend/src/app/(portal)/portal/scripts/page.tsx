@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useLanguage } from "@/components/providers/language-provider"
-import { Search, Copy, Check, Terminal, Flame, Info, Loader2, Gamepad2, Tag, Hash, Zap, ExternalLink } from "lucide-react"
+import { Search, Copy, Check, Terminal, Flame, Info, Loader2, Gamepad2, Tag, Hash, Zap, ExternalLink, ChevronDown } from "lucide-react"
 import Link from "next/link"
 
 interface ReleaseItem {
@@ -53,6 +53,7 @@ export default function ScriptsPage() {
   const tKey = (key: string) => t(key as Parameters<typeof t>[0])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
   const [copiedScript, setCopiedScript] = useState<string | null>(null)
   const [selectedScriptForDetail, setSelectedScriptForDetail] = useState<ReleaseItem | null>(null)
   const [releases, setReleases] = useState<ReleaseItem[]>([])
@@ -127,44 +128,59 @@ export default function ScriptsPage() {
         <p className="text-[11px] text-muted-foreground">{t("scriptVaultDesc")}</p>
       </div>
 
-      {/* Filters Bar */}
-      <div className="space-y-2 p-3 bg-muted/20 border border-border/80 rounded-xl">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-[10px] font-mono text-muted-foreground shrink-0">{tKey("filters")}</span>
-          </div>
-
-          <div className="relative w-36 sm:w-48">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/60" />
-            <input
-              type="text"
-              placeholder={tKey("searchScripts")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-7 pr-2 py-1 text-[9px] font-mono rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:border-primary/50"
-            />
-          </div>
+      {/* Filters Row */}
+      <div className="flex items-center justify-between gap-3 pb-2 select-none">
+        {/* Search Input */}
+        <div className="relative flex-1 sm:grow max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+          <input
+            type="text"
+            placeholder={tKey("searchScripts")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8.5 pr-3 py-1.5 text-[9px] font-mono rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:border-primary/50"
+          />
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-mono text-muted-foreground shrink-0 w-16">{tKey("categoryLabel")}</span>
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 text-[9px] font-mono rounded-md border transition-all cursor-pointer shrink-0 ${
-                  selectedCategory === cat
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-card border-border text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        {/* Category Filter Dropdown */}
+        <div className="relative w-28 sm:w-36 shrink-0">
+          <button
+            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+            className="flex items-center justify-between gap-1.5 px-3 py-1.5 text-[9px] font-mono rounded-lg border border-border bg-card text-foreground hover:bg-muted/40 transition-colors cursor-pointer w-full text-left font-bold"
+          >
+            <span className="truncate">{selectedCategory}</span>
+            <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/60 shrink-0 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {isCategoryDropdownOpen && (
+            <>
+              {/* Backdrop overlay to close when clicking outside */}
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setIsCategoryDropdownOpen(false)} 
+              />
+              
+              {/* Options Card */}
+              <div className="absolute right-0 mt-1.5 w-full z-50 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md outline-hidden animate-in fade-in-80 duration-100 max-h-48 overflow-y-auto no-scrollbar">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat)
+                      setIsCategoryDropdownOpen(false)
+                    }}
+                    className={`flex w-full cursor-pointer select-none items-center rounded-md px-2.5 py-1.5 text-[9px] font-semibold font-mono outline-hidden transition-colors ${
+                      selectedCategory === cat
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
