@@ -47,6 +47,10 @@ services:
         condition: service_healthy
     env_file:
       - ./backend/.env
+    environment:
+      # Override localhost → Docker service name so containers can communicate
+      - REDIS_HOST=valinc-redis
+      - DB_HOST=valinc-postgres
     restart: unless-stopped
 
   # Next.js Frontend
@@ -64,6 +68,23 @@ services:
       - backend
     restart: unless-stopped
 
+  # Discord Bot Service
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: valinc-bot
+    env_file:
+      - ./bot/.env
+    environment:
+      # Bot communicates with backend via internal Docker network
+      - BACKEND_INTERNAL_URL=http://valinc-backend:5000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
     driver: local

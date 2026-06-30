@@ -117,7 +117,10 @@ class LicenseController {
         throw new AppError('Shortlink verification step incomplete', 403);
       }
 
-      const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
+      let ip = req.headers['cf-connecting-ip'] || req.headers['x-real-ip'] || req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
+      if (ip && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+      }
       if (session.ip && session.ip !== 'unknown' && session.ip !== ip) {
         throw new AppError('IP address mismatch for session', 403);
       }

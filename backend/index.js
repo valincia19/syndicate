@@ -35,6 +35,7 @@ const securityHeaders = require('./src/middleware/security.middleware');
 const rateLimiter = require('./src/middleware/rateLimiter.middleware');
 const { createRateLimiter } = require('./src/middleware/rateLimiter.middleware');
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler.middleware');
+const { internalAuth } = require('./src/middleware/internalAuth.middleware');
 const cookieParser = require('cookie-parser');
 
 // Route imports
@@ -65,6 +66,16 @@ const server = http.createServer(app);
 
 // Trust proxy (required for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
+
+// Helper to get clean client IP (prioritizes Cloudflare and reverse proxy headers)
+function getClientIp(req) {
+  if (!req) return 'unknown';
+  let ip = req.headers['cf-connecting-ip'] || req.headers['x-real-ip'] || req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  if (ip && ip.includes(',')) {
+    ip = ip.split(',')[0].trim();
+  }
+  return ip;
+}
 
 // ============================================================
 // GLOBAL MIDDLEWARE STACK
@@ -151,7 +162,7 @@ app.post('/v1/bypass/session', createRateLimiter({ name: 'bypass_session', windo
       return res.status(503).json({ status: 'error', statusCode: 503, message: 'Verification session system unavailable' });
     }
 
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const ip = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
     const fingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
 
@@ -203,7 +214,7 @@ app.post('/v1/bypass/verify-captcha', createRateLimiter({ name: 'verify_captcha'
     }
 
     let session = typeof rawSession === 'string' ? JSON.parse(rawSession) : rawSession;
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const ip = getClientIp(req);
 
     if (session.ip && session.ip !== 'unknown' && session.ip !== ip) {
       return res.status(403).json({ status: 'error', statusCode: 403, message: 'IP address mismatch' });
@@ -267,7 +278,7 @@ app.post('/v1/bypass/verify', createRateLimiter({ name: 'bypass_verify', windowM
     }
 
     let session = typeof rawSession === 'string' ? JSON.parse(rawSession) : rawSession;
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const ip = getClientIp(req);
 
     // 2. Validate UUID matches stored session UUID
     if (session.uuid !== uuid) {
@@ -328,7 +339,7 @@ app.post('/v1/bypass/verify-linkvertise', createRateLimiter({ name: 'bypass_veri
     }
 
     let session = typeof rawSession === 'string' ? JSON.parse(rawSession) : rawSession;
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const ip = getClientIp(req);
 
     // 2. Validate IP matches session creator IP
     if (session.ip && session.ip !== 'unknown' && session.ip !== ip) {
@@ -395,7 +406,7 @@ app.post('/v1/bypass/verify-workink', createRateLimiter({ name: 'bypass_verify_w
     }
 
     let session = typeof rawSession === 'string' ? JSON.parse(rawSession) : rawSession;
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const ip = getClientIp(req);
 
     // 2. Validate IP matches session creator IP
     if (session.ip && session.ip !== 'unknown' && session.ip !== ip) {
@@ -453,7 +464,7 @@ app.get('/v1/bypass/settings', async (req, res, next) => {
       checkpoint3_url: ''
     };
 
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const ip = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
     const crypto = require('crypto');
     const fingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
@@ -507,6 +518,57 @@ app.use('/v1/currency', currencyRoutes);
 app.use('/v1/vouchers', voucherRoutes);
 app.use('/v1/changelogs', changelogRoutes);
 app.use('/v1/activity', activityRoutes);
+
+// ── Internal Bot API (protected via X-Internal-Secret) ────────────────────
+// Only accessible from within the Docker network (bot service → backend)
+const internalRouter = express.Router();
+
+// Health check
+internalRouter.get('/', (req, res) => {
+  res.status(200).json({ status: 'success', message: 'Internal API is operational', data: { uptime: process.uptime() } });
+});
+
+// GET /v1/internal/keys/:discordId — fetch non-free licenses for a Discord user
+internalRouter.get('/keys/:discordId', async (req, res) => {
+  try {
+    const { discordId } = req.params;
+    const pool = db.getPool();
+
+    // Find user by discord_id
+    const userResult = await pool.query(
+      'SELECT id, name, username FROM users WHERE discord_id = $1 LIMIT 1',
+      [discordId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.json({ success: true, data: { keys: [], message: 'No linked account found' } });
+    }
+
+    const user = userResult.rows[0];
+
+    // Fetch non-free licenses for this user
+    const keysResult = await pool.query(
+      `SELECT license_key, tier, status, expires_at, created_at, hwid_limit, uses
+       FROM licenses
+       WHERE user_id = $1 AND tier != 'free'
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [user.id]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        user: { name: user.name, username: user.username },
+        keys: keysResult.rows,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.use('/v1/internal', internalAuth, internalRouter);
 
 // ============================================================
 // ERROR HANDLERS (must be after all routes)

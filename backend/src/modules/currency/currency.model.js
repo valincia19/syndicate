@@ -117,6 +117,26 @@ class CurrencyModel {
     const pool = db.getPool();
     await pool.query('DELETE FROM currency_rates WHERE currency_code = $1', [code.toUpperCase()]);
   }
+
+  async getSetting(key) {
+    const pool = db.getPool();
+    const result = await pool.query(
+      'SELECT key_value FROM system_settings WHERE key_name = $1',
+      [key]
+    );
+    return result.rows[0]?.key_value || null;
+  }
+
+  async saveSetting(key, val) {
+    const pool = db.getPool();
+    await pool.query(
+      `INSERT INTO system_settings (key_name, key_value)
+       VALUES ($1, $2)
+       ON CONFLICT (key_name)
+       DO UPDATE SET key_value = EXCLUDED.key_value, updated_at = CURRENT_TIMESTAMP`,
+      [key, JSON.stringify(val)]
+    );
+  }
 }
 
 module.exports = new CurrencyModel();

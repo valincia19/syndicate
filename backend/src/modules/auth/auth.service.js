@@ -350,7 +350,10 @@ class AuthService {
       });
     }
 
-    // 5. Generate session JWT token
+    // 5. Auto-join Discord Guild (fire-and-forget — never block auth flow)
+    await this._joinDiscordGuild(access_token, discordId);
+
+    // 6. Generate session JWT token
         const token = jwt.sign(
           {
             id: user.id,
@@ -368,6 +371,71 @@ class AuthService {
       user,
       token,
     };
+  }
+
+  /**
+   * Auto-join a Discord user to the configured guild using their OAuth access_token.
+   * Requires:
+   *   - DISCORD_BOT_TOKEN  — a bot that is already a member of the target guild
+   *                          with the "Create Instant Invite" permission.
+   *   - DISCORD_GUILD_ID   — the ID of the Discord server to join.
+   *
+   * The user's OAuth token MUST have been issued with the `guilds.join` scope.
+   * This is handled in discordRedirect() via the OAuth authorization URL.
+   *
+   * NOTE: Errors are intentionally swallowed — auth succeeds even if the join fails
+   * (e.g. bot removed from guild, user already a member, API rate-limited).
+   *
+   * @param {string} userAccessToken  — Discord OAuth2 access_token for the user
+   * @param {string} discordUserId    — Discord snowflake user ID
+   * @private
+   */
+  async _joinDiscordGuild(userAccessToken, discordUserId) {
+    const context = 'Service:Auth:Discord:GuildJoin';
+    const { botToken, guildId } = env.discord;
+
+    if (!botToken || !guildId) {
+      logger.warn(context, 'DISCORD_BOT_TOKEN or DISCORD_GUILD_ID not configured — skipping auto-join');
+      return;
+    }
+
+    try {
+      // Discord API: PUT /guilds/{guild.id}/members/{user.id}
+      // Docs: https://discord.com/developers/docs/resources/guild#add-guild-member
+      const response = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordUserId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bot ${botToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ access_token: userAccessToken }),
+        }
+      );
+
+      // 201 Created  = user successfully added to the guild
+      // 204 No Content = user was already a member (no-op, still a success)
+      if (response.status === 201) {
+        logger.info(context, `User ${discordUserId} successfully added to guild ${guildId}`);
+      } else if (response.status === 204) {
+        logger.info(context, `User ${discordUserId} is already a member of guild ${guildId} — skipping`);
+      } else {
+        const errBody = await response.text();
+        logger.warn(context, `Unexpected response from Discord guild-join API`, {
+          status: response.status,
+          discordUserId,
+          guildId,
+          bodyLength: errBody.length,
+        });
+      }
+    } catch (err) {
+      // Network errors, timeouts — never block the auth flow
+      logger.error(context, `Guild auto-join failed (non-fatal): ${err.message}`, {
+        discordUserId,
+        guildId,
+      });
+    }
   }
 
   /**

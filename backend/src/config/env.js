@@ -73,9 +73,14 @@ const env = {
     clientId: process.env.DISCORD_CLIENT_ID || '',
     clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
     redirectUri: process.env.DISCORD_REDIRECT_URI || 'http://localhost:5000/v1/auth/discord/callback',
+    botToken: process.env.DISCORD_BOT_TOKEN || '',
+    guildId: process.env.DISCORD_GUILD_ID || '',
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   backendUrl: process.env.BACKEND_URL || 'http://localhost:5000',
+
+  // Internal Bot → Backend shared secret
+  internalApiSecret: process.env.INTERNAL_API_SECRET || '',
 
   // Cloudflare R2
   r2: {
@@ -145,6 +150,14 @@ const validateEnv = () => {
 
   if (!env.discord.clientId || !env.discord.clientSecret) {
     logger.warn('Env', 'Discord Client ID or Client Secret not set. Discord login will be disabled.');
+  }
+
+  if (!env.discord.botToken || !env.discord.guildId) {
+    logger.warn('Env', 'DISCORD_BOT_TOKEN or DISCORD_GUILD_ID not set. Auto-join guild feature will be disabled.');
+  }
+
+  if (!env.internalApiSecret || env.internalApiSecret.length < 32) {
+    logger.warn('Env', 'INTERNAL_API_SECRET not set or too short (<32 chars). Internal bot API will be disabled.');
   }
 
   if (!env.r2.endpoint || !env.r2.accessKeyId || !env.r2.secretAccessKey || !env.r2.bucketName) {

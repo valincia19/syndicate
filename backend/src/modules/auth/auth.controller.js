@@ -162,7 +162,8 @@ class AuthController {
         throw new AppError('Discord login temporarily unavailable. Please try again later.', 503);
       }
       
-      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20email&state=${state}`;
+      // guilds.join scope is required so the bot can add the user to the configured guild
+      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20email%20guilds.join&state=${state}`;
       
       res.redirect(discordAuthUrl);
     } catch (error) {

@@ -69,6 +69,10 @@ export default function OwnerCurrencyPage() {
     is_active: true
   })
 
+  // ─── Censor Pricing State ───────────────────────────────────────────────────
+  const [censorPricing, setCensorPricing] = useState(false)
+  const [censorSaving, setCensorSaving] = useState(false)
+
   const fetchCurrencies = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -107,6 +111,7 @@ export default function OwnerCurrencyPage() {
     if (!authLoading && user?.role === 'owner') {
       const timer = setTimeout(() => {
         fetchCurrencies()
+        fetchCensorSetting()
       }, 0)
       return () => clearTimeout(timer)
     }
@@ -279,6 +284,45 @@ export default function OwnerCurrencyPage() {
     } catch { /* ignore */ }
   }
 
+  // ─── Censor Pricing Toggle ──────────────────────────────────────────────────
+  const fetchCensorSetting = async () => {
+    try {
+      const t = tokenManager.getToken()
+      if (!t) return
+      const res = await fetch(BASE_API + '/v1/currency/settings', {
+        headers: { Authorization: 'Bearer ' + t },
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCensorPricing(!!data.data.censor_pricing)
+      }
+    } catch { /* ignore */ }
+  }
+
+  const toggleCensorPricing = async () => {
+    setCensorSaving(true)
+    try {
+      const t = tokenManager.getToken()
+      const newVal = !censorPricing
+      const res = await fetch(BASE_API + '/v1/currency/settings', {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ censor_pricing: newVal }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCensorPricing(newVal)
+        setSuccessMsg(newVal ? '🔒 Pricing is now censored on the landing page' : '🔓 Pricing is now visible on the landing page')
+      } else {
+        setError(data.error || 'Failed to update setting')
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setCensorSaving(false)
+    }
+  }
+
   const hasChanges = currencies.some(c => c.pendingUpdate || c.isEdited)
   const usdCurrency = currencies.find(c => c.rate_code === 'USD' || c.currency_code === 'USD')
   const activeUSDRate = usdCurrency ? Number(usdCurrency.rate_to_idr) : 20000
@@ -353,6 +397,31 @@ export default function OwnerCurrencyPage() {
             <Plus size={13} /> Add Currency
           </button>
         </div>
+      </div>
+
+      {/* Censor Pricing Toggle */}
+      <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+            🔒 Censor Pricing
+          </span>
+          <span className="text-[10px] font-mono text-muted-foreground">
+            When enabled, all prices on the landing page will be blurred and purchase buttons disabled.
+          </span>
+        </div>
+        <button
+          onClick={toggleCensorPricing}
+          disabled={censorSaving}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer shrink-0 ${
+            censorPricing ? 'bg-red-500' : 'bg-muted-foreground/30'
+          } ${censorSaving ? 'opacity-50' : ''}`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+              censorPricing ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
       </div>
 
       {/* Alerts */}

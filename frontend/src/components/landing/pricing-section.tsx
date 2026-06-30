@@ -86,6 +86,7 @@ export default function PricingSection() {
 
   const [pricesData, setPricesData] = useState<PlanPricesData | null>(null)
   const [detectedCurrency, setDetectedCurrency] = useState<string>('IDR')
+  const [isCensored, setIsCensored] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -111,6 +112,9 @@ export default function PricingSection() {
         const data = await res.json()
         if (data.success) {
           setPricesData(data.data)
+          if (typeof data.data.censor_pricing === 'boolean') {
+            setIsCensored(data.data.censor_pricing)
+          }
         }
       } catch {
         // Fallback static structure matching backend currency API
@@ -229,7 +233,7 @@ export default function PricingSection() {
 
                 <div className="flex flex-col items-start justify-start gap-2 self-stretch">
                   <div className="flex flex-col items-start justify-start gap-1">
-                    <div className="relative flex h-15 items-center text-5xl font-medium">
+                    <div className={`relative flex h-15 items-center text-5xl font-medium${isCensored ? ' blur-md select-none' : ''}`}>
                       <span>{detectedCurrency === 'IDR' ? 'Rp 0' : formatPriceDisplay(0, detectedCurrency)}</span>
                     </div>
                     <div className="text-sm font-medium text-muted-foreground">
@@ -238,8 +242,8 @@ export default function PricingSection() {
                   </div>
                 </div>
 
-                <Button size={"lg"} className="w-full cursor-pointer" onClick={() => window.location.href = "https://keyauth.vinzhub.com"}>
-                  {t("planFreeBtn")}
+                <Button size={"lg"} className={`w-full${isCensored ? ' opacity-50 cursor-not-allowed' : ' cursor-pointer'}`} disabled={isCensored} onClick={() => !isCensored && (window.location.href = "https://keyauth.vinzhub.com")}>
+                  {isCensored ? 'Coming Soon' : t("planFreeBtn")}
                 </Button>
               </div>
 
@@ -289,10 +293,10 @@ export default function PricingSection() {
 
                 <div className="flex flex-col items-start justify-start gap-2 self-stretch">
                   <div className="flex flex-col items-start justify-start gap-1">
-                    <span className="text-current/50 text-sm font-medium line-through">
+                    <span className={`text-current/50 text-sm font-medium line-through${isCensored ? ' blur-md select-none' : ''}`}>
                       {premPricing.original}
                     </span>
-                    <div className="flex flex-wrap items-baseline gap-2 w-full min-w-0">
+                    <div className={`flex flex-wrap items-baseline gap-2 w-full min-w-0${isCensored ? ' blur-md select-none' : ''}`}>
                       <div className="text-current relative flex h-auto py-1 items-center text-3xl sm:text-4xl font-medium tracking-tight whitespace-nowrap">
                         <span>{premPricing.price}</span>
                       </div>
@@ -306,8 +310,8 @@ export default function PricingSection() {
                   </div>
                 </div>
                 
-                <Button size={"lg"} className="w-full bg-background text-foreground hover:bg-background/90 cursor-pointer" onClick={() => router.push("/portal/payment?plan=premium")}>
-                  {t("planPremiumBtn")}
+                <Button size={"lg"} className={`w-full bg-background text-foreground hover:bg-background/90${isCensored ? ' opacity-50 cursor-not-allowed' : ' cursor-pointer'}`} disabled={isCensored} onClick={() => !isCensored && router.push("/portal/payment?plan=premium")}>
+                  {isCensored ? 'Coming Soon' : t("planPremiumBtn")}
                 </Button>
               </div>
 
@@ -355,10 +359,10 @@ export default function PricingSection() {
 
                 <div className="flex flex-col items-start justify-start gap-2 self-stretch">
                   <div className="flex flex-col items-start justify-start gap-1">
-                    <span className="text-muted-foreground/50 text-sm font-medium line-through">
+                    <span className={`text-muted-foreground/50 text-sm font-medium line-through${isCensored ? ' blur-md select-none' : ''}`}>
                       {proPricing.original}
                     </span>
-                    <div className="flex flex-wrap items-baseline gap-2 w-full min-w-0">
+                    <div className={`flex flex-wrap items-baseline gap-2 w-full min-w-0${isCensored ? ' blur-md select-none' : ''}`}>
                       <div className="relative flex h-auto py-1 items-center text-3xl sm:text-4xl font-medium tracking-tight whitespace-nowrap">
                         <span>{proPricing.price}</span>
                       </div>
@@ -371,8 +375,8 @@ export default function PricingSection() {
                     </div>
                   </div>
                 </div>
-                <Button size={"lg"} className="w-full cursor-pointer" onClick={() => router.push("/portal/payment?plan=pro")}>
-                  {t("planProBtn")}
+                <Button size={"lg"} className={`w-full${isCensored ? ' opacity-50 cursor-not-allowed' : ' cursor-pointer'}`} disabled={isCensored} onClick={() => !isCensored && router.push("/portal/payment?plan=pro")}>
+                  {isCensored ? 'Coming Soon' : t("planProBtn")}
                 </Button>
               </div>
 

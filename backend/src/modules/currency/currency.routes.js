@@ -6,6 +6,10 @@ const { authenticateToken, authorizeRoles } = require('../../middleware/auth.mid
 // Public: get plan prices in IDR (based on live USD rate)
 router.get('/plans', currencyController.getPlanPrices);
 
+// Owner-only: currency settings (censor pricing toggle etc.)
+router.get('/settings', authenticateToken, authorizeRoles('owner'), currencyController.getCurrencySettings);
+router.put('/settings', authenticateToken, authorizeRoles('owner'), currencyController.updateCurrencySettings);
+
 // Admin-only: manage currency rates
 router.get('/all', authenticateToken, authorizeRoles('admin', 'owner'), currencyController.getAllCurrencies);
 router.get('/active', authenticateToken, currencyController.getActiveCurrencies);

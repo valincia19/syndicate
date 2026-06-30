@@ -68,7 +68,11 @@ exports.getPlanPrices = async (req, res) => {
       };
     }
 
-    res.json({ success: true, data: { base_currency: 'USD', usd_rate: usdRate, plans } });
+    // Fetch censor_pricing setting from system_settings
+    const censorSetting = await currencyModel.getSetting('censor_pricing');
+    const isCensored = censorSetting ? !!censorSetting.enabled : false;
+
+    res.json({ success: true, data: { base_currency: 'USD', usd_rate: usdRate, plans, censor_pricing: isCensored } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -139,3 +143,42 @@ exports.bulkUpdateCurrencies = async (req, res) => {
   }
 };
 
+/**
+ * GET /v1/currency/settings (owner only)
+ * Returns currency-related settings like censor_pricing
+ */
+exports.getCurrencySettings = async (req, res) => {
+  try {
+    const censorSetting = await currencyModel.getSetting('censor_pricing');
+    res.json({
+      success: true,
+      data: {
+        censor_pricing: censorSetting ? !!censorSetting.enabled : false,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
+ * PUT /v1/currency/settings (owner only)
+ * Updates currency-related settings
+ */
+exports.updateCurrencySettings = async (req, res) => {
+  try {
+    const { censor_pricing } = req.body;
+
+    if (typeof censor_pricing === 'boolean') {
+      await currencyModel.saveSetting('censor_pricing', { enabled: censor_pricing });
+    }
+
+    res.json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: { censor_pricing: !!censor_pricing },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
