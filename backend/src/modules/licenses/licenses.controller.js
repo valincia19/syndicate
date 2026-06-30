@@ -130,6 +130,12 @@ class LicenseController {
       }
 
       const userAgent = req.headers['user-agent'] || '';
+      const crypto = require('crypto');
+      const currentFingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
+      if (session.fingerprint && session.fingerprint !== currentFingerprint) {
+        throw new AppError('Session fingerprint mismatch (switching browsers/devices is not allowed)', 403);
+      }
+
       const license = await licenseService.createFreeKey(ip, userAgent);
 
       // BURN SESSION TIMING: Delete session ONLY after DB create succeeds

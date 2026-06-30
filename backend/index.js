@@ -220,6 +220,13 @@ app.post('/v1/bypass/verify-captcha', createRateLimiter({ name: 'verify_captcha'
       return res.status(403).json({ status: 'error', statusCode: 403, message: 'IP address mismatch' });
     }
 
+    const crypto = require('crypto');
+    const userAgent = req.headers['user-agent'] || '';
+    const currentFingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
+    if (session.fingerprint && session.fingerprint !== currentFingerprint) {
+      return res.status(403).json({ status: 'error', statusCode: 403, message: 'Session fingerprint mismatch (switching browsers/devices is not allowed)' });
+    }
+
     const env = require('./src/config/env');
     const adminService = require('./src/modules/admin/admin.service');
     const freeKeySettings = await adminService.getSystemSetting('free_key_settings');
@@ -290,8 +297,14 @@ app.post('/v1/bypass/verify', createRateLimiter({ name: 'bypass_verify', windowM
       return res.status(403).json({ status: 'error', statusCode: 403, message: 'IP address mismatch' });
     }
 
-    // 4. Record bypass in PostgreSQL database
     const crypto = require('crypto');
+    const userAgent = req.headers['user-agent'] || '';
+    const currentFingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
+    if (session.fingerprint && session.fingerprint !== currentFingerprint) {
+      return res.status(403).json({ status: 'error', statusCode: 403, message: 'Session fingerprint mismatch (switching browsers/devices is not allowed)' });
+    }
+
+    // 4. Record bypass in PostgreSQL database
     const id = crypto.randomUUID();
     const logger = require('./src/config/logger');
 
@@ -344,6 +357,13 @@ app.post('/v1/bypass/verify-linkvertise', createRateLimiter({ name: 'bypass_veri
     // 2. Validate IP matches session creator IP
     if (session.ip && session.ip !== 'unknown' && session.ip !== ip) {
       return res.status(403).json({ status: 'error', statusCode: 403, message: 'IP address mismatch for session' });
+    }
+
+    const crypto = require('crypto');
+    const userAgent = req.headers['user-agent'] || '';
+    const currentFingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
+    if (session.fingerprint && session.fingerprint !== currentFingerprint) {
+      return res.status(403).json({ status: 'error', statusCode: 403, message: 'Session fingerprint mismatch (switching browsers/devices is not allowed)' });
     }
 
     // 3. Get Linkvertise Anti-Bypass token from admin settings or environment
@@ -411,6 +431,13 @@ app.post('/v1/bypass/verify-workink', createRateLimiter({ name: 'bypass_verify_w
     // 2. Validate IP matches session creator IP
     if (session.ip && session.ip !== 'unknown' && session.ip !== ip) {
       return res.status(403).json({ status: 'error', statusCode: 403, message: 'IP address mismatch for session' });
+    }
+
+    const crypto = require('crypto');
+    const userAgent = req.headers['user-agent'] || '';
+    const currentFingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
+    if (session.fingerprint && session.fingerprint !== currentFingerprint) {
+      return res.status(403).json({ status: 'error', statusCode: 403, message: 'Session fingerprint mismatch (switching browsers/devices is not allowed)' });
     }
 
     // 3. Perform server-to-server verification with Work.ink API v2
