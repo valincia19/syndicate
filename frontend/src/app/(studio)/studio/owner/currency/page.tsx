@@ -100,6 +100,20 @@ export default function OwnerCurrencyPage() {
     }
   }, [])
 
+  const fetchCensorSetting = useCallback(async () => {
+    try {
+      const t = tokenManager.getToken()
+      if (!t) return
+      const res = await fetch(BASE_API + '/v1/currency/settings', {
+        headers: { Authorization: 'Bearer ' + t },
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCensorPricing(!!data.data.censor_pricing)
+      }
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true)
@@ -115,7 +129,7 @@ export default function OwnerCurrencyPage() {
       }, 0)
       return () => clearTimeout(timer)
     }
-  }, [authLoading, user?.role, fetchCurrencies])
+  }, [authLoading, user?.role, fetchCurrencies, fetchCensorSetting])
 
   // Auto-clear success / error messages
   useEffect(() => {
@@ -285,19 +299,6 @@ export default function OwnerCurrencyPage() {
   }
 
   // ─── Censor Pricing Toggle ──────────────────────────────────────────────────
-  const fetchCensorSetting = async () => {
-    try {
-      const t = tokenManager.getToken()
-      if (!t) return
-      const res = await fetch(BASE_API + '/v1/currency/settings', {
-        headers: { Authorization: 'Bearer ' + t },
-      })
-      const data = await res.json()
-      if (data.success) {
-        setCensorPricing(!!data.data.censor_pricing)
-      }
-    } catch { /* ignore */ }
-  }
 
   const toggleCensorPricing = async () => {
     setCensorSaving(true)
