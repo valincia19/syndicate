@@ -110,7 +110,11 @@ class LicenseController {
 
       let session = typeof sessionData === 'string' ? JSON.parse(sessionData) : sessionData;
 
-      if (!session.captcha) {
+      const adminService = require('../admin/admin.service');
+      const freeKeySettings = await adminService.getSystemSetting('free_key_settings');
+      const turnstileEnabled = freeKeySettings ? (freeKeySettings.turnstile_enabled !== false) : true;
+
+      if (turnstileEnabled && !session.captcha) {
         throw new AppError('Captcha verification step incomplete', 403);
       }
       if (!session.shortlink) {
