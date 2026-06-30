@@ -9,12 +9,17 @@ class ActivityModel {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_activities (
         id          VARCHAR(36)   PRIMARY KEY,
-        user_id     VARCHAR(36)   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_id     VARCHAR(36)   NULL REFERENCES users(id) ON DELETE CASCADE,
         action      VARCHAR(100)  NOT NULL,
         details     JSONB         NULL,
         created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Migrate existing table if it was created with NOT NULL constraint
+    await pool.query(`
+      ALTER TABLE user_activities ALTER COLUMN user_id DROP NOT NULL;
+    `).catch(() => {});
 
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_user_activities_user ON user_activities(user_id);
