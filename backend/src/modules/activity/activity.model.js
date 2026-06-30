@@ -30,6 +30,10 @@ class ActivityModel {
   }
 
   async log(userId, action, details = null) {
+    if (!userId) {
+      // Don't insert logs into user_activities if user is a guest (not logged in)
+      return null;
+    }
     const pool = getPool();
     const id = crypto.randomUUID();
     await pool.query(
