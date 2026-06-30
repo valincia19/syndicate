@@ -91,7 +91,7 @@ class LicenseController {
   async freeKey(req, res, next) {
     try {
       const { session_id } = req.body;
-      const AppError = require('../../utils/appError');
+      const { AppError } = require('../../middleware/errorHandler.middleware');
       const redisModule = require('../../config/redis');
       const redis = redisModule.getRedis();
 
