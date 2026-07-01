@@ -1,7 +1,7 @@
 {
   "name": "valinc-obfuscator",
   "version": "1.0.0",
-  "description": "Professional Javascript/Typescript source code obfuscator for Valinc Syndicate",
+  "description": "Professional AST-based Modular Javascript Obfuscator for Valinc Syndicate",
   "main": "index.js",
   "bin": {
     "valinc-obfuscate": "./index.js"
@@ -10,6 +10,11 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@babel/core": "^7.23.9",
+    "@babel/parser": "^7.23.9",
+    "@babel/traverse": "^7.23.9",
+    "@babel/generator": "^7.23.9",
+    "@babel/types": "^7.23.9",
     "javascript-obfuscator": "^4.1.0",
     "glob": "^10.3.10"
   }

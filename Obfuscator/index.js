@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * VALINC SYNDICATE - Professional Source Code Obfuscator Compiler
+ * VALINC SYNDICATE - AST Modular Source Code Secure Compiler
  * Command Line Interface & Processing Engine
  */
 
@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 const { glob } = require('glob');
 const presets = require('./obfuscator.config');
+const ObfuscationEngine = require('./engine');
 
 // ANSI Terminal Colors for Professional Reporting
 const COLORS = {
@@ -26,7 +27,7 @@ const COLORS = {
 function printBanner() {
   console.log(`
 ${COLORS.cyan}${COLORS.bold}==================================================================
-        VALINC SYNDICATE :: SOURCE CODE SECURE COMPILER v1.0.0
+   VALINC SYNDICATE :: AST MODULAR SOURCE SECURE COMPILER v1.0.0
 ==================================================================${COLORS.reset}
   `);
 }
@@ -123,7 +124,6 @@ async function main() {
   if (stat.isFile()) {
     files = [absoluteInput];
   } else {
-    // Read all .js files (excluding node_modules or output directory if nested)
     const globPattern = path.join(absoluteInput, '**/*.js').replace(/\\/g, '/');
     files = await glob(globPattern, {
       ignore: ['**/node_modules/**', `${absoluteOutput.replace(/\\/g, '/')}/**`]
@@ -141,7 +141,7 @@ async function main() {
   console.log(`  - Preset:       ${COLORS.magenta}${options.preset.toUpperCase()}${COLORS.reset}`);
   console.log(`  - Files Count:  ${files.length}`);
   console.log(`  - Watermark:    "${options.watermark}"\n`);
-  console.log(`${COLORS.yellow}Starting Secure Compiling...${COLORS.reset}\n`);
+  console.log(`${COLORS.yellow}Starting Secure AST Modular Compiling...${COLORS.reset}\n`);
 
   const startTime = Date.now();
   const buildHash = crypto.randomBytes(8).toString('hex').toUpperCase();
@@ -154,6 +154,7 @@ async function main() {
   };
 
   const fileReports = [];
+  const engine = new ObfuscationEngine(presetConfig);
 
   for (const file of files) {
     try {
@@ -164,7 +165,6 @@ async function main() {
       const destinationPath = path.join(absoluteOutput, relativePath);
       const fileContent = fs.readFileSync(file, 'utf8');
 
-      // Check if file is Typescript (inform user they should run tsc first)
       if (file.endsWith('.ts') || file.endsWith('.tsx')) {
         console.warn(`${COLORS.yellow}[Warning] Skipped '${relativePath}': Found TypeScript source. Please compile your TS project to JS before obfuscation.${COLORS.reset}`);
         stats.failed++;
@@ -173,27 +173,37 @@ async function main() {
 
       stats.originalBytes += Buffer.byteLength(fileContent, 'utf8');
 
-      // Execute Obfuscation Core Engine
-      const obfuscationResult = JavaScriptObfuscator.obfuscate(fileContent, {
-        ...presetConfig,
-        // Injects self defending checks bound to the output file structure
-        sourceMap: false
-      });
+      // 1. Run our Custom Modular AST Obfuscator Engine
+      let compiledCode = engine.obfuscate(fileContent);
 
-      let finalCode = obfuscationResult.getObfuscatedCode();
+      // 2. Post-process with javascript-obfuscator for double-layer protection if enabled
+      if (presetConfig.useExternalPostProcessor) {
+        const obfuscationResult = JavaScriptObfuscator.obfuscate(compiledCode, {
+          compact: true,
+          controlFlowFlattening: true,
+          controlFlowFlatteningThreshold: 0.5,
+          deadCodeInjection: true,
+          deadCodeInjectionThreshold: 0.4,
+          identifierNamesGenerator: 'hexadecimal',
+          selfDefending: true,
+          stringArray: true,
+          stringArrayEncoding: ['base64']
+        });
+        compiledCode = obfuscationResult.getObfuscatedCode();
+      }
 
-      // Inject watermarks at top of file
+      // 3. Inject Watermark
       if (options.watermark) {
         const timestamp = new Date().toISOString();
         const watermarkComment = `/**\n * ${options.watermark}\n * Build Hash: ${buildHash}\n * Timestamp: ${timestamp}\n */\n\n`;
-        finalCode = watermarkComment + finalCode;
+        compiledCode = watermarkComment + compiledCode;
       }
 
-      // Write code to destination
+      // Write to destination
       ensureDirectoryExistence(destinationPath);
-      fs.writeFileSync(destinationPath, finalCode, 'utf8');
+      fs.writeFileSync(destinationPath, compiledCode, 'utf8');
 
-      const finalSize = Buffer.byteLength(finalCode, 'utf8');
+      const finalSize = Buffer.byteLength(compiledCode, 'utf8');
       stats.obfuscatedBytes += finalSize;
       stats.processed++;
 
@@ -210,7 +220,7 @@ async function main() {
     } catch (err) {
       stats.failed++;
       console.error(`${COLORS.red}✘ Failed to compile:${COLORS.reset} ${file}`);
-      console.error(`${COLORS.red}  Error Details: ${err.message}${COLORS.reset}`);
+      console.error(`${COLORS.red}  Error Details: ${err.stack}${COLORS.reset}`);
       fileReports.push({
         file,
         status: 'failed',
@@ -224,23 +234,22 @@ async function main() {
   const sizeDiffWord = stats.obfuscatedBytes > stats.originalBytes ? 'Expansion' : 'Compression';
   const sizeDiffPct = Math.abs(parseFloat(sizeReduction)).toFixed(1);
 
-  // Write compilation report to disk (Audit Trial Log)
+  // Write compilation report
   const reportPath = path.join(absoluteOutput, `build-report-${buildHash}.json`);
-  const reportData = {
+  ensureDirectoryExistence(reportPath);
+  fs.writeFileSync(reportPath, JSON.stringify(reportData = {
     buildHash,
     preset: options.preset,
     timestamp: new Date().toISOString(),
     durationSeconds: parseFloat(duration),
     summary: stats,
     files: fileReports
-  };
-  ensureDirectoryExistence(reportPath);
-  fs.writeFileSync(reportPath, JSON.stringify(reportData, null, 2), 'utf8');
+  }, null, 2), 'utf8');
 
   // GORGEOUS BUILD REPORT OUTPUT
   console.log(`
 ${COLORS.green}${COLORS.bold}==================================================================
-                     SECURE BUILD SUMMARY REPORT
+                 SECURE AST BUILD SUMMARY REPORT
 ==================================================================${COLORS.reset}
   - Unique Build Hash:   ${COLORS.yellow}${COLORS.bold}${buildHash}${COLORS.reset}
   - Elapsed Time:        ${duration} seconds
