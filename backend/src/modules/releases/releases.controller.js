@@ -229,54 +229,56 @@ local url = "${secureEndpoint}"
   .. "&roblox_avatar=" .. HttpService:UrlEncode(avatarUrl)
   .. "&executor=" .. HttpService:UrlEncode(executor)
 
-local ok, response = pcall(function()
-  return HttpService:RequestAsync({
-    Url = url,
-    Method = "GET",
-    Headers = {
-      ["User-Agent"] = "RobloxApp",
-      ["X-Valinc-Handshake"] = "TRUE",
-    }
-  })
-end)
+-- ── Fetch Real Script Payload ────────────────────────────────────────────────
+local scriptBody = ""
+local req = (type(request) == "function" and request) or (type(http_request) == "function" and http_request) or (type(syn.request) == "function" and syn.request)
 
--- ── Handle Response ──────────────────────────────────────────────────────────
-if not ok then
-  warn("[VALINC] Connection error. Please retry.")
-  return
-end
-
-if not response or not response.Success then
-  -- Attempt to parse a structured JSON error from the backend
-  local errMsg = "[VALINC] Script delivery failed. (HTTP " .. tostring(response and response.StatusCode or "?") .. ")"
-  pcall(function()
-    local parsed = HttpService:JSONDecode(response.Body)
-    if parsed and parsed.message then
-      errMsg = "[VALINC] " .. tostring(parsed.message)
-    end
+if req then
+  local ok, response = pcall(function()
+    return req({
+      Url = url,
+      Method = "GET",
+      Headers = {
+        ["User-Agent"] = "Roblox/WinInet",
+        ["X-Valinc-Handshake"] = "TRUE",
+      }
+    })
   end)
-  warn(errMsg)
-  return
+  if ok and response and response.StatusCode == 200 then
+    scriptBody = response.Body
+  else
+    local getOk, getRes = pcall(function()
+      return game:HttpGet(url)
+    end)
+    if getOk then
+      scriptBody = getRes
+    else
+      warn("[VALINC] Connection error. Please retry.")
+      return
+    end
+  end
+else
+  local getOk, getRes = pcall(function()
+    return game:HttpGet(url)
+  end)
+  if getOk then
+    scriptBody = getRes
+  else
+    warn("[VALINC] Connection error. Please retry.")
+    return
+  end
 end
 
--- ── Parse JSON error response if Content-Type indicates JSON ─────────────────
-local contentType = (response.Headers and (response.Headers["content-type"] or response.Headers["Content-Type"])) or ""
-if contentType:find("application/json") then
+-- ── Parse JSON error response if content is JSON ─────────────────────────────
+if scriptBody:sub(1, 1) == "{" then
   local errMsg = "[VALINC] Access denied."
   pcall(function()
-    local parsed = HttpService:JSONDecode(response.Body)
+    local parsed = HttpService:JSONDecode(scriptBody)
     if parsed and parsed.message then
       errMsg = "[VALINC] " .. tostring(parsed.message)
     end
   end)
   warn(errMsg)
-  return
-end
-
--- ── Execute Real Script In-Memory via loadstring() ───────────────────────────
-local scriptBody = response.Body
-if not scriptBody or #scriptBody == 0 then
-  warn("[VALINC] Empty payload received.")
   return
 end
 
@@ -324,7 +326,8 @@ end
       const handshake = req.headers['x-valinc-handshake'];
       const userAgent = req.headers['user-agent'] || '';
 
-      if (handshake !== 'TRUE' || !/RobloxApp|Roblox/i.test(userAgent)) {
+      const isRoblox = /RobloxApp|Roblox/i.test(userAgent);
+      if (!isRoblox && handshake !== 'TRUE') {
         logger.warn('Release:SecureLoader', 'Handshake or UA validation failed', {
           handshake,
           userAgent: userAgent.substring(0, 100),
