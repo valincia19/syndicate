@@ -20,7 +20,6 @@ backend/crypto_logos/
 Thumbs.db
 
 # Exclude non-app directories & local tools/configs
-/keyauth/
 /design-assets-hub-v2/
 /memory/
 /.obsidian/
