@@ -82,9 +82,17 @@ const server = http.createServer(app);
 // Trust proxy (required for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
 
-// Helper to get clean client IP (trusts req.ip parsed via Express 'trust proxy' setting)
+// Helper to get clean client IP (trusts req.ip parsed via Express 'trust proxy' setting, falls back to cf-connecting-ip)
 function getClientIp(req) {
   if (!req) return 'unknown';
+  const cfConnectingIp = req.headers['cf-connecting-ip'];
+  if (cfConnectingIp) {
+    return cfConnectingIp.trim();
+  }
+  const xForwardedFor = req.headers['x-forwarded-for'];
+  if (xForwardedFor) {
+    return xForwardedFor.split(',')[0].trim();
+  }
   let ip = req.ip || req.socket?.remoteAddress || 'unknown';
   if (ip && ip.includes(',')) {
     ip = ip.split(',')[0].trim();
