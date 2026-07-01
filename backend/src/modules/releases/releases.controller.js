@@ -168,7 +168,7 @@ class ReleaseController {
       // ── Browser/Direct API Access Guard ──────────────────────────────────
       const userAgent = req.headers['user-agent'] || '';
       const accept = req.headers['accept'] || '';
-      const isExecutor = /RobloxApp/i.test(userAgent) || req.headers['x-executor'] || req.headers['x-valinc-handshake'];
+      const isExecutor = /RobloxApp|Roblox/i.test(userAgent) || req.headers['x-executor'] || req.headers['x-valinc-handshake'];
       const isBlockedAgent = /Mozilla|Chrome|Safari|curl|wget/i.test(userAgent) || accept.includes('text/html');
 
       if (!isExecutor || isBlockedAgent) {
@@ -324,7 +324,7 @@ end
       const handshake = req.headers['x-valinc-handshake'];
       const userAgent = req.headers['user-agent'] || '';
 
-      if (handshake !== 'TRUE' || userAgent !== 'RobloxApp') {
+      if (handshake !== 'TRUE' || !/RobloxApp|Roblox/i.test(userAgent)) {
         logger.warn('Release:SecureLoader', 'Handshake or UA validation failed', {
           handshake,
           userAgent: userAgent.substring(0, 100),
