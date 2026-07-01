@@ -122,7 +122,31 @@ export default function AdminLicenseDetailPage() {
       .then(([licRes, hwidRes]) => {
         if (active) {
           setLicense(licRes.data.license)
-          setDevices(hwidRes.data.hwids || [])
+          const hwids = hwidRes.data.hwids || []
+          setDevices(hwids)
+
+          // Resolve rbxthumb:// avatars in batch
+          const unresolvedIds = hwids
+            .filter(d => d.roblox_avatar && (d.roblox_avatar.startsWith('rbxthumb://') || !d.roblox_avatar.startsWith('http')))
+            .map(d => d.roblox_id)
+            .filter(Boolean)
+
+          if (unresolvedIds.length > 0) {
+            fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${unresolvedIds.join(',')}&size=100x100&format=Png&isCircular=true`)
+              .then(r => r.json())
+              .then(resData => {
+                if (resData && Array.isArray(resData.data)) {
+                  setDevices(prev => prev.map(device => {
+                    const match = resData.data.find((item: any) => String(item.targetId) === String(device.roblox_id))
+                    if (match && match.imageUrl) {
+                      return { ...device, roblox_avatar: match.imageUrl }
+                    }
+                    return device
+                  }))
+                }
+              })
+              .catch(err => console.error("Failed to resolve avatars:", err))
+          }
         }
       })
       .catch((err) => {
