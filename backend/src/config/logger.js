@@ -1,17 +1,14 @@
 /**
- * Structured Logger Configuration
+ * Structured Logger Configuration (Winston-based)
  * Centralized logging with levels for all modules
  */
 
-// Log levels with numeric values for filtering
-const LOG_LEVELS = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  debug: 3,
-};
+const winston = require('winston');
 
-// Color codes for console output (development only)
+const isProduction = process.env.NODE_ENV === 'production';
+const logLevel = process.env.LOG_LEVEL || 'info';
+
+// Color codes for console output levels
 const COLORS = {
   error: '\x1b[31m',    // Red
   warn: '\x1b[33m',     // Yellow
@@ -20,51 +17,53 @@ const COLORS = {
   reset: '\x1b[0m',     // Reset
 };
 
-const isProduction = process.env.NODE_ENV === 'production';
-const currentLogLevel = LOG_LEVELS[process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug')];
+// Custom format for dev console output: [Timestamp] [LEVEL] [Module] message {metadata}
+const devFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
+  winston.format.printf(({ timestamp, level, message, context, ...meta }) => {
+    const rawLevel = level.toLowerCase();
+    const color = COLORS[rawLevel] || COLORS.info;
+    const formattedLevel = level.toUpperCase();
+    
+    const ctx = context ? ` [${context}]` : '';
+    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    
+    return `${color}[${timestamp}] [${formattedLevel}]${ctx}${COLORS.reset} ${message}${metaStr}`;
+  })
+);
 
-const formatTimestamp = () => new Date().toISOString();
+// Custom format for production JSON logging
+const prodFormat = winston.format.combine(
+  winston.format.timestamp(),
+  winston.format.json()
+);
 
-const formatMessage = (level, module, message, data = null) => {
-  const timestamp = formatTimestamp();
+const winstonLogger = winston.createLogger({
+  level: logLevel,
+  format: isProduction ? prodFormat : devFormat,
+  transports: [
+    new winston.transports.Console({
+      // Winston's built-in colorize can interfere with our custom format structure,
+      // so we use our custom ANSI coloring wrapper inside the devFormat printf function.
+      stderrLevels: ['error'],
+    })
+  ]
+});
 
-  if (isProduction) {
-    // Production: Structured JSON format for cloud log aggregators
-    return JSON.stringify({
-      timestamp,
-      level: level.toUpperCase(),
-      context: module,
-      message,
-      ...(data && { metadata: data }),
-    });
-  }
-
-  // Development: Rich readable colorized output
-  const color = COLORS[level] || COLORS.info;
-  const prefix = `[${timestamp}] [${level.toUpperCase()}] [${module}]`;
-  const dataStr = data ? ` ${JSON.stringify(data)}` : '';
-  return `${color}${prefix}${COLORS.reset} ${message}${dataStr}`;
-};
-
+// Helper wrappers to match existing logger API: logger.info(module, message, data)
 module.exports = {
   error: (module, message, data) => {
-    if (LOG_LEVELS.error <= currentLogLevel) {
-      console.error(formatMessage('error', module, message, data));
-    }
+    winstonLogger.error(message, { context: module, ...data });
   },
   warn: (module, message, data) => {
-    if (LOG_LEVELS.warn <= currentLogLevel) {
-      console.warn(formatMessage('warn', module, message, data));
-    }
+    winstonLogger.warn(message, { context: module, ...data });
   },
   info: (module, message, data) => {
-    if (LOG_LEVELS.info <= currentLogLevel) {
-      console.log(formatMessage('info', module, message, data));
-    }
+    winstonLogger.info(message, { context: module, ...data });
   },
   debug: (module, message, data) => {
-    if (LOG_LEVELS.debug <= currentLogLevel) {
-      console.log(formatMessage('debug', module, message, data));
-    }
+    winstonLogger.debug(message, { context: module, ...data });
   },
+  // Export direct winston logger instance if needed for streaming
+  winstonLogger
 };

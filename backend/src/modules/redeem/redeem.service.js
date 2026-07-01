@@ -4,6 +4,7 @@ const RedeemModel = require('./redeem.model');
 const LicenseModel = require('../licenses/licenses.model');
 const { AppError } = require('../../middleware/errorHandler.middleware');
 const cacheUtility = require('../../utils/cache.utility');
+const logger = require('../../config/logger');
 
 const TIER_CONFIG = {
   free:    { hwid_limit: 1,  duration_days: 7 },
@@ -42,13 +43,21 @@ class RedeemService {
     const tier = data.tier || 'free';
     const config = TIER_CONFIG[tier] || TIER_CONFIG.free;
 
-    return RedeemModel.create({
+    const createdCode = await RedeemModel.create({
       code,
       tier,
       hwid_limit: data.hwid_limit || config.hwid_limit,
       duration_days: data.duration_days || config.duration_days,
       created_by: adminId,
     });
+
+    logger.info('RedeemService', 'Redeem code created by admin', {
+      code,
+      tier,
+      createdBy: adminId
+    });
+
+    return createdCode;
   }
 
   async delete(id) {
@@ -56,6 +65,11 @@ class RedeemService {
     if (!code) throw new AppError('Redeem code not found', 404);
     if (code.status === 'used') throw new AppError('Cannot delete a used redeem code', 400);
     await RedeemModel.delete(id);
+    
+    logger.info('RedeemService', 'Redeem code deleted by admin', {
+      id,
+      code: code.code
+    });
   }
 
   async redeem(codeText, userId) {
@@ -97,6 +111,12 @@ class RedeemService {
     });
 
     await cacheUtility.del(`cache:user_licenses:${userId}`);
+
+    logger.info('RedeemService', 'Redeem code redeemed successfully', {
+      code: codeText,
+      userId,
+      licenseKey
+    });
 
     return { license, code: code.code };
   }

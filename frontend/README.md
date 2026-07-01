@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 VALINC SYNDICATE User Portal & Landing Page
 
-## Getting Started
+![Next.js](https://img.shields.io/badge/Next.js-16.x-black?style=flat-square&logo=next.js)
+![React](https://img.shields.io/badge/React-19.x-blue?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8?style=flat-square&logo=tailwind-css)
+![Optimization](https://img.shields.io/badge/Optimization-Pruned-success?style=flat-square)
 
-First, run the development server:
+Frontend web application untuk platform **VALINC SYNDICATE** yang berisi landing page premium dan user portal / dashboard untuk manajemen lisensi, keys, dan script.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## ⚡ Optimasi & Performa (Production-Ready)
+
+Sebagai bagian dari standarisasi perilisan ke production, proyek ini telah melalui audit performa dan pruning kode secara menyeluruh:
+
+* **Dependency Pruning (via Knip)**:
+  * Menggunakan `knip` untuk mendeteksi dependency mati.
+  * Menghapus **9 unused dependencies** yang tidak diimpor untuk meminimalkan size `node_modules` dan bundle JavaScript.
+* **Dead Code & Unused Files Cleanup**:
+  * Menghapus **12 file sampah/mati** (termasuk mockup lama, file asset duplikat, unused layout files, dan utility code lawas).
+  * Menghasilkan ukuran build Next.js yang **jauh lebih ringan, cepat**, serta meminimalkan error runtime.
+
+---
+
+## 🛠️ Tech Stack & Konvensi
+
+- **Framework**: Next.js 16 (App Router) dengan React 19.
+- **Styling**: Tailwind CSS v4 dengan `@tailwindcss/postcss` untuk performa kompilasi CSS yang sangat cepat.
+- **UI Components**: Shadcn UI (`base-nova` style) di `src/components/ui/`.
+- **State Management**: Zustand untuk state UI dan interaksi complex.
+- **Type Checking**: Strict TypeScript.
+
+---
+
+## 📁 Struktur Folder Utama
+
+```
+frontend/
+├── src/
+│   ├── app/                    # Next.js App Router (Landing page, Portal dashboard)
+│   ├── components/             # Reusable UI & Layout components
+│   ├── config/                 # i18n & static dictionaries
+│   ├── data/                   # Client-side data schemas
+│   ├── hooks/                  # Custom React hooks (theme, language, dll)
+│   ├── lib/                    # API client & utility functions
+│   └── stores/                 # Zustand store definitions
+├── public/                     # Static assets (images, icons, templates)
+├── package.json
+└── tsconfig.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🚀 Pengerjaan Lokal
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Install Dependencies
+```bash
+cd frontend
+npm install
+```
 
-## Learn More
+### 2. Jalankan Dev Server
+```bash
+npm run dev
+# Running on http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Kompilasi & Build Produksi
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Linter & Static Analysis
+```bash
+npm run lint      # Jalankan ESLint (0 warnings/errors)
+npx knip          # Analisis dead-code dan unused exports
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+**Built with ❤️ for VALINCIA SYNDICATE - High Performance, Sleek UI, Secure**

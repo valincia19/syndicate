@@ -19,11 +19,9 @@ const { checkWsUpgradeRate } = require('../middleware/rateLimiter.middleware');
 // ─── Constants & Validation Schemas ───────────────────────────────
 const AUTH_PREFIX = 'bearer_';
 const HEARTBEAT_INTERVAL = 30_000;    // ping every 30s
-const HEARTBEAT_TIMEOUT = 10_000;     // terminate if no pong in 10s
 const MSG_RATE_LIMIT = 30;            // max messages per window
 const MSG_RATE_WINDOW = 10_000;       // rate window (10s)
 const MAX_PAYLOAD_BYTES = 4096;       // 4KB limit to prevent Memory DoS
-const RECONNECT_MAX_DELAY = 30_000;
 const PROTOCOL_CHANNEL = 'ticket-ws.v1';
 
 const subscribePayloadSchema = z.object({
@@ -219,8 +217,7 @@ function setupWebSocket(server) {
   // ─── HTTP → WebSocket Upgrade Handler ──────────────────────────
   server.on('upgrade', async (req, socket, head) => {
     const xff = req.headers['x-forwarded-for'];
-    const remoteIp = req.headers['cf-connecting-ip'] || 
-                     (xff ? xff.split(',')[0].trim() : null) || 
+    const remoteIp = (xff ? xff.split(',')[0].trim() : null) || 
                      req.socket.remoteAddress || 
                      '127.0.0.1';
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
@@ -324,8 +321,7 @@ function setupWebSocket(server) {
     logger.info('WebSocket', 'Client connected', {
       userId: user.id,
       role: user.role,
-      ip: req.headers['cf-connecting-ip'] || 
-          (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : null) || 
+      ip: (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : null) || 
           req.socket.remoteAddress || 
           '127.0.0.1',
     });

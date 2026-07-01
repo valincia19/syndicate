@@ -56,9 +56,10 @@ export function StudioHeader({ userRole }: StudioHeaderProps) {
       items: [
         { name: "Overview", href: "/studio/developer/overview" },
         { name: "Scripts", href: "/studio/developer/scripts" },
-        { name: "Deploy", href: "/studio/developer/deploy" },
         { name: "Releases", href: "/studio/developer/releases" },
+        { name: "Deploy", href: "/studio/developer/deploy" },
         { name: "Changelogs", href: "/studio/developer/changelogs" },
+        { name: "Doc", href: "/studio/developer/doc" },
       ],
     },
     {

@@ -35,7 +35,7 @@ const verificationRateLimiter = async (req, res, next) => {
       });
     }
     next();
-  } catch (error) {
+  } catch {
     next(); // Fail open on Redis errors
   }
 };
@@ -48,6 +48,7 @@ const { registerSchema, loginSchema, verifyEmailSchema, forgotPasswordSchema, re
 router.post('/register', authRateLimiter, validate(registerSchema, 'body'), authController.register.bind(authController));
 router.post('/login', authRateLimiter, validate(loginSchema, 'body'), authController.login.bind(authController));
 router.post('/logout', authController.logout.bind(authController));
+router.post('/refresh', authController.refresh.bind(authController));
 router.get('/discord', authController.discordRedirect.bind(authController));
 router.get('/discord/callback', authController.discordCallback.bind(authController));
 router.post('/forgot-password', authRateLimiter, validate(forgotPasswordSchema, 'body'), authController.forgotPassword.bind(authController));

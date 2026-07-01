@@ -12,15 +12,10 @@ const env = require('../config/env');
 const { getRedis } = require('../config/redis');
 const logger = require('../config/logger');
 
-// Helper to get clean client IP (prioritizes Cloudflare and reverse proxy headers)
+// Helper to get clean client IP (trusts req.ip parsed via Express 'trust proxy' setting)
 const getClientIp = (req) => {
   if (!req) return 'unknown';
-  let ip = req.headers['cf-connecting-ip'] || 
-           req.headers['x-real-ip'] || 
-           req.ip || 
-           (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : null) || 
-           req.socket?.remoteAddress || 
-           'unknown';
+  let ip = req.ip || req.socket?.remoteAddress || 'unknown';
   if (ip && ip.includes(',')) {
     ip = ip.split(',')[0].trim();
   }
@@ -102,11 +97,9 @@ const rateLimiter = async (req, res, next) => {
   const key = `ratelimit:global:${identifier}`;
 
   let result = await checkRedisRate(key, windowSeconds, max);
-  let source = 'redis';
 
   if (!result) {
     result = checkMemoryRate(`global:${identifier}`);
-    source = 'memory';
   }
 
   res.set('X-RateLimit-Limit', max);

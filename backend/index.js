@@ -15,6 +15,7 @@ const http = require('http');
 const env = require('./src/config/env');
 const db = require('./src/config/database');
 const { connectRedis, disconnectRedis } = require('./src/config/redis');
+const logger = require('./src/config/logger');
 const UserModel = require('./src/modules/auth/auth.model');
 const TicketModel = require('./src/modules/tickets/tickets.model');
 const LicenseModel = require('./src/modules/licenses/licenses.model');
@@ -37,6 +38,7 @@ const { createRateLimiter } = require('./src/middleware/rateLimiter.middleware')
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler.middleware');
 const { internalAuth } = require('./src/middleware/internalAuth.middleware');
 const cookieParser = require('cookie-parser');
+const requestLogger = require('./src/middleware/requestLogger.middleware');
 
 // Route imports
 const authRoutes = require('./src/modules/auth/auth.routes');
@@ -48,12 +50,12 @@ const hwidRoutes = require('./src/modules/hwid/hwid.routes');
 const scriptsRoutes = require('./src/modules/scripts/scripts.routes');
 const releaseRoutes = require('./src/modules/releases/releases.routes');
 const releaseController = require('./src/modules/releases/releases.controller');
-const executionController = require('./src/modules/executions/executions.controller');
 const paymentRoutes = require('./src/modules/payment/payment.routes');
 const currencyRoutes = require('./src/modules/currency/currency.routes');
 const voucherRoutes = require('./src/modules/vouchers/vouchers.routes');
 const changelogRoutes = require('./src/modules/changelogs/changelogs.routes');
 const activityRoutes = require('./src/modules/activity/activity.routes');
+const keyauthRoutes = require('./src/modules/keyauth/keyauth.routes');
 
 // WebSocket
 const { setupWebSocket } = require('./src/config/websocket');
@@ -61,16 +63,29 @@ const { setupWebSocket } = require('./src/config/websocket');
 // Initialize Express app
 const app = express();
 
+// Intercept app.use to record mounting paths on router layers (required for dynamic route printing in Express 5)
+const originalUse = app.use;
+app.use = function (path, ...fns) {
+  if (typeof path === 'string') {
+    fns.forEach(fn => {
+      if (fn && typeof fn === 'function' && fn.stack) {
+        fn._mountPath = path;
+      }
+    });
+  }
+  return originalUse.apply(this, arguments);
+};
+
 // Create HTTP server (required for WebSocket upgrade)
 const server = http.createServer(app);
 
 // Trust proxy (required for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
 
-// Helper to get clean client IP (prioritizes Cloudflare and reverse proxy headers)
+// Helper to get clean client IP (trusts req.ip parsed via Express 'trust proxy' setting)
 function getClientIp(req) {
   if (!req) return 'unknown';
-  let ip = req.headers['cf-connecting-ip'] || req.headers['x-real-ip'] || req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  let ip = req.ip || req.socket?.remoteAddress || 'unknown';
   if (ip && ip.includes(',')) {
     ip = ip.split(',')[0].trim();
   }
@@ -88,6 +103,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(requestLogger);
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -141,12 +157,15 @@ app.get('/health', async (req, res) => {
 // Public endpoints (no auth, rate-limited)
 app.get('/v1/releases/public', createRateLimiter({ name: 'releases_public', windowMs: 60 * 1000, max: 30 }), releaseController.listPublic.bind(releaseController));
 app.get('/v1/releases/game-info/:gameId', createRateLimiter({ name: 'game_info', windowMs: 60 * 1000, max: 20 }), releaseController.gameInfo.bind(releaseController));
+// Stage 2: Authenticated secure delivery (must be registered before wildcard /:prefix)
+app.get('/v1/releases/secure-load/:prefix', createRateLimiter({ name: 'secure_loader', windowMs: 60 * 1000, max: 30 }), releaseController.secureLoader.bind(releaseController));
+// Stage 1: Gatekeeper bootstrap generator (public loader)
 app.get('/v1/releases/:prefix', createRateLimiter({ name: 'loader', windowMs: 60 * 1000, max: 60 }), releaseController.loader.bind(releaseController));
 // Also support singular /v1/release/:prefix for loader
 app.get('/v1/release/:prefix', createRateLimiter({ name: 'loader', windowMs: 60 * 1000, max: 60 }), releaseController.loader.bind(releaseController));
 
-// Public executions stats
-app.get('/v1/executions/stats', executionController.stats.bind(executionController));
+// Public executions stats (disabled — executionController import pending feature completion)
+// app.get('/v1/executions/stats', executionController.stats.bind(executionController));
 
 // Public free key — no auth required, rate-limited to 3 claims per IP per hour
 const licenseController = require('./src/modules/licenses/licenses.controller');
@@ -165,6 +184,19 @@ app.post('/v1/bypass/session', createRateLimiter({ name: 'bypass_session', windo
     const ip = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
     const fingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
+
+    // VPN/Proxy detection via Cloudflare headers and request characteristics
+    const cfWorker = req.headers['cf-worker'];
+    const isDatacenterUA = /node-fetch|axios|go-http-client|python-requests|curl|wget|postman/i.test(userAgent);
+    if (cfWorker || isDatacenterUA) {
+      const loggerMod = require('./src/config/logger');
+      loggerMod.warn('Security', 'VPN/Proxy or Bot detected via request headers', { ip, userAgent, cfWorker });
+      return res.status(403).json({
+        status: 'error',
+        statusCode: 403,
+        message: 'VPN/Proxy Detected! Please disable your VPN, proxy, or server-relay to claim a free key.'
+      });
+    }
 
     const session_id = crypto.randomUUID();
     const uuid = crypto.randomUUID();
@@ -188,6 +220,61 @@ app.post('/v1/bypass/session', createRateLimiter({ name: 'bypass_session', windo
       statusCode: 201,
       message: 'Verification session created successfully',
       data: { session_id, uuid }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Endpoint to check if a session exists and is still valid in Redis
+app.get('/v1/bypass/session/:session_id', async (req, res, next) => {
+  try {
+    const { session_id } = req.params;
+    const redisModule = require('./src/config/redis');
+    const redis = redisModule.getRedis();
+    if (!redis) {
+      return res.status(503).json({ status: 'error', statusCode: 503, message: 'Redis unavailable' });
+    }
+
+    const session = await redis.get(`session:${session_id}`);
+    if (!session) {
+      return res.status(404).json({ status: 'error', statusCode: 404, message: 'Session not found or expired' });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      statusCode: 200,
+      data: { valid: true }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Endpoint to check if a license key is valid (exists in database and not expired)
+app.get('/v1/bypass/check-key/:key', async (req, res, next) => {
+  try {
+    const { key } = req.params;
+    const pool = db.getPool();
+    const result = await pool.query(
+      'SELECT expires_at, status FROM licenses WHERE license_key = $1 LIMIT 1',
+      [key.trim()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', statusCode: 404, message: 'License key not found' });
+    }
+
+    const license = result.rows[0];
+    const isExpired = license.expires_at && new Date(license.expires_at) < new Date();
+    if (isExpired) {
+      return res.status(400).json({ status: 'error', statusCode: 400, message: 'License key expired' });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      statusCode: 200,
+      data: { valid: true }
     });
   } catch (err) {
     next(err);
@@ -248,6 +335,9 @@ app.post('/v1/bypass/verify-captcha', createRateLimiter({ name: 'verify_captcha'
           return res.status(403).json({ status: 'error', statusCode: 403, message: 'Captcha verification failed on server' });
         }
       }
+    } else {
+      const loggerMod = require('./src/config/logger');
+      loggerMod.warn('BypassSystem', 'Turnstile captcha bypass enabled by admin config — captcha auto-approved without verification', { sessionId: session_id, ip });
     }
 
     session.captcha = true;
@@ -302,6 +392,24 @@ app.post('/v1/bypass/verify', createRateLimiter({ name: 'bypass_verify', windowM
     const currentFingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
     if (session.fingerprint && session.fingerprint !== currentFingerprint) {
       return res.status(403).json({ status: 'error', statusCode: 403, message: 'Session fingerprint mismatch (switching browsers/devices is not allowed)' });
+    }
+
+    // 3.5. Time-lock validation to prevent instant checkpoint bypass
+    const adminService = require('./src/modules/admin/admin.service');
+    const freeKeySettings = await adminService.getSystemSetting('free_key_settings');
+    const checkpoints = freeKeySettings ? (freeKeySettings.valinc_checkpoints ?? 2) : 2;
+    const countdown = freeKeySettings ? (freeKeySettings.valinc_countdown_seconds ?? 10) : 10;
+    const requiredSeconds = checkpoints * countdown;
+
+    const elapsedSeconds = Math.floor(Date.now() / 1000) - session.created_at;
+    if (elapsedSeconds < requiredSeconds) {
+      const logger = require('./src/config/logger');
+      logger.warn('BypassSystem', `Bypass attempt detected (completed too fast): Session: ${session_id}, Elapsed: ${elapsedSeconds}s, Required: ${requiredSeconds}s`);
+      return res.status(403).json({ 
+        status: 'error', 
+        statusCode: 403, 
+        message: 'Verifikasi selesai terlalu cepat. Silakan ikuti proses secara normal.' 
+      });
     }
 
     // 4. Record bypass in PostgreSQL database
@@ -545,6 +653,7 @@ app.use('/v1/currency', currencyRoutes);
 app.use('/v1/vouchers', voucherRoutes);
 app.use('/v1/changelogs', changelogRoutes);
 app.use('/v1/activity', activityRoutes);
+app.use('/v1/keys', keyauthRoutes);
 
 // ── Internal Bot API (protected via X-Internal-Secret) ────────────────────
 // Only accessible from within the Docker network (bot service → backend)
@@ -602,6 +711,78 @@ app.use('/v1/internal', internalAuth, internalRouter);
 // ============================================================
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// ============================================================
+// SERVER BANNER & ROUTE INFO (Winston logger)
+// ============================================================
+function getExpressRoutes(appInstance) {
+  const routes = [];
+
+  function traverse(router, prefix = '') {
+    if (!router || !router.stack) return;
+    
+    router.stack.forEach(layer => {
+      if (layer.route) {
+        const methods = Object.keys(layer.route.methods).map(m => m.toUpperCase());
+        const path = (prefix + layer.route.path).replace(/\/+/g, '/');
+        methods.forEach(method => {
+          // Avoid duplicate entries if any
+          if (!routes.some(r => r.method === method && r.path === path)) {
+            routes.push({ method, path });
+          }
+        });
+      } else if (layer.name === 'router' && layer.handle && layer.handle.stack) {
+        const mountPath = layer.handle._mountPath || '';
+        traverse(layer.handle, prefix + mountPath);
+      }
+    });
+  }
+
+  if (appInstance.router && appInstance.router.stack) {
+    appInstance.router.stack.forEach(layer => {
+      if (layer.route) {
+        const methods = Object.keys(layer.route.methods).map(m => m.toUpperCase());
+        methods.forEach(method => {
+          if (!routes.some(r => r.method === method && r.path === layer.route.path)) {
+            routes.push({ method, path: layer.route.path });
+          }
+        });
+      } else if (layer.name === 'router' && layer.handle && layer.handle.stack) {
+        const mountPath = layer.handle._mountPath || '';
+        traverse(layer.handle, mountPath);
+      }
+    });
+  }
+
+  return routes;
+}
+
+function displayServerInfo() {
+  const context = 'System';
+  
+  logger.info(context, '==================================================');
+  logger.info(context, '🚀 VALINCIA SYNDICATE Backend API Running 🚀');
+  logger.info(context, '==================================================');
+  logger.info(context, `📍 Server      : http://localhost:${env.port}`);
+  logger.info(context, `🌍 Environment : ${env.nodeEnv}`);
+  logger.info(context, `🗄️  Database    : PostgreSQL (connected, pool: ${env.database.connectionLimit})`);
+  logger.info(context, `🔴 Redis       : ${require('./src/config/redis').getRedis() ? 'Connected' : 'Memory fallback'}`);
+  logger.info(context, `🔌 WebSocket   : ws://localhost:${env.port}/ws`);
+  logger.info(context, '--------------------------------------------------');
+
+  logger.info('ServerRouter', 'Available Routes:');
+  const routes = getExpressRoutes(app);
+  
+  // Sort routes alphabetically by path for clean presentation
+  routes.sort((a, b) => a.path.localeCompare(b.path));
+
+  routes.forEach(r => {
+    const paddedMethod = r.method.padEnd(6, ' ');
+    const paddedPath = r.path.padEnd(45, ' ');
+    logger.info('ServerRouter', `  ${paddedMethod} ${paddedPath}`);
+  });
+  logger.info('System', '==================================================');
+}
 
 // ============================================================
 // START SERVER
@@ -680,36 +861,10 @@ const startServer = async () => {
 
     // 6. Start listening
     server.listen(env.port, () => {
-      console.log('');
-      console.log('╔════════════════════════════════════════════════════╗');
-      console.log('║                                                    ║');
-      console.log('║    🚀 VALINCIA SYNDICATE Backend API Running 🚀     ║');
-      console.log('║                                                    ║');
-      console.log('╚════════════════════════════════════════════════════╝');
-      console.log('');
-      console.log('📍 Server:      http://localhost:' + env.port);
-      console.log('🌍 Environment: ' + env.nodeEnv);
-      console.log('🔐 CORS:        ' + env.allowedOrigins.join(', '));
-      console.log('🗄️  Database:    PostgreSQL (pg pool, limit ' + env.database.connectionLimit + ')');
-      console.log('🔴 Redis:       ' + (require('./src/config/redis').getRedis() ? 'Connected' : 'Memory fallback'));
-      console.log('🔌 WebSocket:   ws://localhost:' + env.port + '/ws');
-      console.log('');
-      console.log('Available Routes:');
-      console.log('  GET    /health               - Health check');
-      console.log('  POST   /v1/auth/register    - Register new user');
-      console.log('  POST   /v1/auth/login       - Login user');
-      console.log('  GET    /v1/auth/profile     - Get user profile (protected)');
-      console.log('  POST   /v1/tickets          - Create a support ticket (protected)');
-      console.log('  GET    /v1/tickets          - List tickets (protected)');
-      console.log('  GET    /v1/tickets/:id      - Get ticket details (protected)');
-      console.log('  POST   /v1/tickets/:id/messages - Reply to ticket (protected)');
-      console.log('  PATCH  /v1/tickets/:id/status   - Update status (staff+)');
-      console.log('');
-      console.log('════════════════════════════════════════════════════');
+      displayServerInfo();
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
-    console.error(error.stack);
+    logger.error('Startup', 'Failed to start server', { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };
@@ -718,7 +873,7 @@ const startServer = async () => {
 // GRACEFUL SHUTDOWN
 // ============================================================
 const shutdown = async (signal) => {
-  console.log('\n🛑 ' + signal + ' received, shutting down gracefully...');
+  logger.info('System', `${signal} received, shutting down gracefully...`);
   await disconnectRedis();
   await db.disconnect();
   process.exit(0);
@@ -727,7 +882,7 @@ const shutdown = async (signal) => {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('unhandledRejection', (err) => {
-  console.error('❌ Unhandled Promise Rejection:', err);
+  logger.error('System', 'Unhandled Promise Rejection', { error: err.message, stack: err.stack });
   if (env.nodeEnv === 'production') process.exit(1);
 });
 

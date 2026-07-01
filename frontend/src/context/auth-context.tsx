@@ -17,6 +17,7 @@ export interface AuthUser {
   verified: boolean
   avatar?: string | null
   balance: number
+  in_discord_guild?: boolean
 }
 
 interface AuthContextType {
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       verified: apiUser.verified === true || apiUser.verified === 1,
       avatar: apiUser.avatar,
       balance: apiUser.balance !== undefined ? Number(apiUser.balance) : 0,
+      in_discord_guild: apiUser.in_discord_guild,
     }
   }, [])
 

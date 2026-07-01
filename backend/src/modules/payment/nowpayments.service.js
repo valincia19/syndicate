@@ -214,7 +214,7 @@ class NowPaymentsService {
         if (cached) {
           return typeof cached === 'string' ? JSON.parse(cached) : cached;
         }
-      } catch (cErr) {
+      } catch {
         // fail open
       }
     }

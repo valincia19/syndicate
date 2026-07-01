@@ -22,7 +22,7 @@ const validate = (schema, source = 'body') => (req, res, next) => {
   // Replace req[source] with sanitized data
   try {
     req[source] = result.data;
-  } catch (e) {
+  } catch {
     Object.assign(req[source], result.data);
   }
 

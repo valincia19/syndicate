@@ -11,6 +11,7 @@ export interface UserResponse {
   discord_id?: string | null
   verified?: boolean | number | null
   balance?: number | string | null
+  in_discord_guild?: boolean
 }
 
 export interface LoginResponse {

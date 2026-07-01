@@ -1,6 +1,5 @@
 const ReleaseModel = require('./releases.model');
 const { AppError } = require('../../middleware/errorHandler.middleware');
-const logger = require('../../config/logger');
 const cacheUtility = require('../../utils/cache.utility');
 
 class ReleaseService {
@@ -136,7 +135,7 @@ class ReleaseService {
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
           try { resolve(JSON.parse(data)); }
-          catch (e) { reject(new Error('Failed to parse Roblox API response')); }
+          catch { reject(new Error('Failed to parse Roblox API response')); }
         });
       }).on('error', reject);
     });

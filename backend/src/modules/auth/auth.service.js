@@ -22,6 +22,49 @@ const cacheUtility = require('../../utils/cache.utility');
 
 class AuthService {
   /**
+   * Issue a short-lived access token (JWT_EXPIRES_IN, default 15m).
+   * @param {object} payload - User claim fields (id, email, role, name, username)
+   * @returns {string} signed JWT
+   */
+  generateAccessToken(payload) {
+    return jwt.sign(
+      { ...payload, jti: crypto.randomUUID() },
+      env.jwtSecret,
+      { expiresIn: env.jwtExpiresIn }
+    );
+  }
+
+  /**
+   * Issue a long-lived, opaque refresh token (REFRESH_TOKEN_EXPIRES_IN, default 7d).
+   * Signed with a separate REFRESH_TOKEN_SECRET so a compromised access-token
+   * secret cannot be used to forge refresh tokens.
+   * @param {string} userId
+   * @returns {string} signed refresh JWT
+   */
+  generateRefreshToken(userId) {
+    return jwt.sign(
+      { sub: userId, jti: crypto.randomUUID() },
+      env.refreshTokenSecret,
+      { expiresIn: env.refreshTokenExpiresIn }
+    );
+  }
+
+  /**
+   * Verify a refresh token and return the user ID contained in its `sub` claim.
+   * Throws AppError(401) on invalid/expired token.
+   * @param {string} token
+   * @returns {string} userId
+   */
+  verifyRefreshToken(token) {
+    try {
+      const decoded = jwt.verify(token, env.refreshTokenSecret);
+      return decoded.sub;
+    } catch {
+      throw new AppError('Invalid or expired refresh token', 401);
+    }
+  }
+
+  /**
    * Register new user
    * Accepts: name, email, password, username?, avatar?
    */
@@ -117,25 +160,22 @@ class AuthService {
       logger.error(context, `[Step 4.1/5 Failed] Failed to send automatic verification email: ${err.message}`, { error: err.stack });
     }
 
-    logger.info(context, `[Step 5/5] Generating JWT token and finishing registration for ID=${newUser.id}`);
+    logger.info(context, `[Step 5/5] Generating access + refresh tokens for ID=${newUser.id}`);
 
-    // ── Generate JWT Token (auto-login after registration) ────
-    const token = jwt.sign(
-      {
-        id: newUser.id,
-        email: newUser.email,
-        role: newUser.role,
-        name: newUser.name || null,
-        username: newUser.username || null,
-        jti: crypto.randomUUID(),
-      },
-      env.jwtSecret,
-      { expiresIn: env.jwtExpiresIn }
-    );
+    // ── Generate access token (short-lived) + refresh token (long-lived) ────
+    const token = this.generateAccessToken({
+      id: newUser.id,
+      email: newUser.email,
+      role: newUser.role,
+      name: newUser.name || null,
+      username: newUser.username || null,
+    });
+    const refreshToken = this.generateRefreshToken(newUser.id);
 
     return {
       user: newUser,
       token,
+      refreshToken,
     };
   }
 
@@ -176,29 +216,26 @@ class AuthService {
       throw new AppError('Your account has been suspended. Please contact support.', 403);
     }
 
-    logger.info(context, `[Step 3/4] Password verified successfully. Issuing JWT session token for ID=${user.id}...`);
+    logger.info(context, `[Step 3/4] Password verified successfully. Issuing access + refresh tokens for ID=${user.id}...`);
 
-    // ── Generate JWT Token ────────────────────────────────────
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        name: user.name || null,
-        username: user.username || null,
-        jti: crypto.randomUUID(),
-      },
-      env.jwtSecret,
-      { expiresIn: env.jwtExpiresIn }
-    );
+    // ── Generate access token (short-lived) + refresh token (long-lived) ────
+    const token = this.generateAccessToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name || null,
+      username: user.username || null,
+    });
+    const refreshToken = this.generateRefreshToken(user.id);
 
-    logger.info(context, `[Step 4/4] JWT session token generated successfully for email=${user.email}`);
+    logger.info(context, `[Step 4/4] Tokens issued successfully for email=${user.email}`);
 
     const { password: _, ...userWithoutPassword } = user;
 
     return {
       user: userWithoutPassword,
       token,
+      refreshToken,
     };
   }
 
@@ -222,21 +259,64 @@ class AuthService {
       throw new AppError('User not found', 404);
     }
 
-    // Re-issue a fresh JWT so the frontend can persist it for WebSocket auth
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        name: user.name || null,
-        username: user.username || null,
-        jti: crypto.randomUUID(),
-      },
-      env.jwtSecret,
-      { expiresIn: env.jwtExpiresIn }
-    );
+    // Re-issue a fresh access token so the frontend can persist it for WebSocket auth
+    const token = this.generateAccessToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name || null,
+      username: user.username || null,
+    });
+    const refreshToken = this.generateRefreshToken(user.id);
 
-    return { user, token };
+    return { user, token, refreshToken };
+  }
+
+  /**
+   * Check if a Discord user is currently in the configured guild.
+   * Caches the result in Redis to prevent hitting Discord API rate limits.
+   * @param {string} discordId
+   * @returns {Promise<boolean>}
+   */
+  async checkDiscordMembership(discordId) {
+    if (!discordId) return false;
+    const env = require('../../config/env');
+    const { botToken, guildId } = env.discord;
+    if (!botToken || !guildId) return false;
+
+    const cacheKey = `cache:discord_membership:${discordId}`;
+    try {
+      const cached = await cacheUtility.get(cacheKey);
+      if (cached !== null && cached !== undefined) {
+        return cached === 'true';
+      }
+    } catch {
+      // Fail silent on cache errors
+    }
+
+    try {
+      const response = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`,
+        {
+          headers: {
+            Authorization: `Bot ${botToken}`,
+          },
+        }
+      );
+
+      const isMember = response.status === 200;
+
+      try {
+        await cacheUtility.set(cacheKey, isMember ? 'true' : 'false', 600); // 10 minutes cache
+      } catch {
+        // Fail silent on cache errors
+      }
+
+      return isMember;
+    } catch (err) {
+      logger.error('Service:Auth:Discord:CheckMembership', `Failed to check membership: ${err.message}`, { discordId });
+      return false;
+    }
   }
 
   /**
@@ -291,7 +371,7 @@ class AuthService {
     }
 
     const discordUser = await userResponse.json();
-    const { id: discordId, username, email, avatar, global_name, verified: discordVerified } = discordUser;
+    const { id: discordId, username, email, avatar, global_name } = discordUser;
 
     // ── Sanitize Discord user fields to prevent XSS injection ───────────────
     const sanitize = (str, maxLen = 50) => {
@@ -353,23 +433,20 @@ class AuthService {
     // 5. Auto-join Discord Guild (fire-and-forget — never block auth flow)
     await this._joinDiscordGuild(access_token, discordId);
 
-    // 6. Generate session JWT token
-        const token = jwt.sign(
-          {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            name: user.name || null,
-            username: user.username || null,
-            jti: crypto.randomUUID(),
-          },
-          env.jwtSecret,
-          { expiresIn: env.jwtExpiresIn }
-        );
+    // 6. Generate access + refresh tokens
+    const token = this.generateAccessToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name || null,
+      username: user.username || null,
+    });
+    const refreshToken = this.generateRefreshToken(user.id);
 
     return {
       user,
       token,
+      refreshToken,
     };
   }
 

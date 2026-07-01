@@ -27,7 +27,7 @@ class ChangelogModel {
     try {
       await pool.query(`ALTER TABLE changelogs ADD COLUMN IF NOT EXISTS game_name VARCHAR(255) NULL`);
       await pool.query(`ALTER TABLE changelogs ADD COLUMN IF NOT EXISTS game_id VARCHAR(100) NULL`);
-    } catch (err) {
+    } catch {
       // ignore if already exists
     }
 

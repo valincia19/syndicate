@@ -147,10 +147,16 @@ class LicenseModel {
     const pool = getPool();
     const result = await pool.query(
       `SELECT l.*, u.name AS user_name, u.email AS user_email,
-              (SELECT COUNT(*) FROM hwid_devices h WHERE h.license_id = l.id)::int AS device_count
+              COALESCE(d.device_count, 0)::int AS device_count
        FROM licenses l
        LEFT JOIN users u ON l.user_id = u.id
-       WHERE l.id = $1`, [id]
+       LEFT JOIN (
+         SELECT license_id, COUNT(*)::int AS device_count
+         FROM hwid_devices
+         WHERE status = 'active'
+         GROUP BY license_id
+       ) d ON d.license_id = l.id
+       WHERE l.id = $1 OR l.license_key = $1`, [id]
     );
     return result.rows[0] || null;
   }

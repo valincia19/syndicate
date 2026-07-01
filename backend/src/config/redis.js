@@ -53,7 +53,7 @@ const connectRedis = async () => {
         if (val === null || val === undefined) return null;
         try {
           return JSON.parse(val);
-        } catch (e) {
+        } catch {
           return val;
         }
       },
@@ -76,6 +76,21 @@ const connectRedis = async () => {
         if (keys.length === 0) return 0;
         // ioredis supports arrays or multiple arguments for del
         return redisClient.del(...keys);
+      },
+
+      /**
+       * Atomic GET + DELETE (Redis GETDEL, requires Redis 6.2+).
+       * Returns the value if it existed, or null if the key was already gone.
+       * Used for claim-and-burn patterns (e.g. session tokens).
+       */
+      async getdel(key) {
+        const val = await redisClient.getdel(key);
+        if (val === null || val === undefined) return null;
+        try {
+          return JSON.parse(val);
+        } catch {
+          return val;
+        }
       },
 
       async keys(pattern) {
@@ -106,7 +121,7 @@ const connectRedis = async () => {
     if (redisClient) {
       try {
         redisClient.disconnect();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
@@ -136,7 +151,7 @@ const disconnectRedis = async () => {
   if (redisClient) {
     try {
       await redisClient.quit();
-    } catch (e) {
+    } catch {
       // Ignore
     }
     logger.info('Redis', 'Redis disconnected');

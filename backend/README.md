@@ -11,6 +11,7 @@ Backend RESTful API yang **modular**, **scalable**, dan **secure** mengikuti bes
 - ✅ **Input Validation** - Validasi email, password strength, dan data integrity
 - ✅ **Rate Limiting** - Anti-brute force protection
 - ✅ **Environment-Based Config** - Secure credential management dengan `.env`
+- ✅ **Strict Code Quality & Linting** - Refactored to pass ESLint with 0 errors and 0 warnings (100% clean status)
 
 ## 📁 Struktur Folder
 
@@ -119,6 +120,11 @@ Permissions-Policy: geolocation=()       // Disable features
 - ✅ Specific error messages untuk JWT, validation, dll
 - ✅ Graceful shutdown (SIGTERM, SIGINT)
 
+### 7. **Anti-VPN & Anti-Bot Mandiri (Self-Hosted)**
+- ✅ **Cloudflare Worker Detection**: Mendeteksi dan memblokir request yang menggunakan Cloudflare Workers (umum digunakan oleh bypasser) via header `cf-worker`.
+- ✅ **Datacenter User-Agent Filtering**: Memblokir library automation/scraping (seperti `node-fetch`, `axios`, `go-http-client`, `python-requests`, `curl`, `wget`, `postman`) menggunakan pencocokan Regex User-Agent.
+- ✅ **Fail-Closed Session Security**: Mengamankan endpoint `/v1/bypass/session` sehingga jika terdeteksi VPN/Proxy atau bot, request langsung di-reject dengan status `403 Forbidden` untuk melindungi integritas sistem free-key.
+
 ## 🚀 API Endpoints
 
 ### Public Routes
@@ -126,6 +132,8 @@ Permissions-Policy: geolocation=()       // Disable features
 GET  /health                    # Health check
 POST /v1/auth/register         # Register new user
 POST /v1/auth/login            # Login & get JWT token
+GET  /v1/keys/verify/:key      # Verifikasi lisensi & HWID (Roblox)
+GET  /v1/keys/activate/:key    # Aktivasi lisensi pertama kali (Roblox)
 ```
 
 ### Protected Routes (require Authorization header)

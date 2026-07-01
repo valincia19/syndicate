@@ -18,6 +18,7 @@ import {
   Ticket,
   History,
   Terminal,
+  BookOpen,
 } from "lucide-react"
 import { VSLogo } from "@/components/brand/vs-logo"
 import { useAuth } from "@/context/auth-context"
@@ -72,9 +73,10 @@ export function StudioSidebar() {
       items: [
         { name: "Overview", href: "/studio/developer/overview", icon: LayoutDashboard },
         { name: "Scripts", href: "/studio/developer/scripts", icon: Code2 },
-        { name: "Deploy", href: "/studio/developer/deploy", icon: Upload },
         { name: "Releases", href: "/studio/developer/releases", icon: Package },
+        { name: "Deploy", href: "/studio/developer/deploy", icon: Upload },
         { name: "Changelogs", href: "/studio/developer/changelogs", icon: History },
+        { name: "Doc", href: "/studio/developer/doc", icon: BookOpen },
       ],
     },
     {

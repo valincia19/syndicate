@@ -63,7 +63,7 @@ export default function OverviewPage() {
 
   const [licenses, setLicenses] = useState<License[]>([])
   const [isLoadingLicenses, setIsLoadingLicenses] = useState(true)
-  const [execStats, setExecStats] = useState<ExecStats | null>(null)
+  const execStats = null as unknown as ExecStats // TODO: Re-enable useState when /v1/executions/stats backend route is ready
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([])
 
 
@@ -91,19 +91,20 @@ export default function OverviewPage() {
   }, [refreshUser])
 
   // Fetch execution stats
-  useEffect(() => {
-    let active = true
-    api.get<{ status: string; data: ExecStats }>("/v1/executions/stats")
-      .then((res) => {
-        if (active) {
-          setExecStats(res.data || null)
-        }
-      })
-      .catch(() => {})
-    return () => {
-      active = false
-    }
-  }, [])
+  // TODO: Re-enable when /v1/executions/stats backend route is ready.
+  // useEffect(() => {
+  //   let active = true
+  //   api.get<{ status: string; data: ExecStats }>("/v1/executions/stats")
+  //     .then((res) => {
+  //       if (active) {
+  //         setExecStats(res.data || null)
+  //       }
+  //     })
+  //     .catch(() => {})
+  //   return () => {
+  //     active = false
+  //   }
+  // }, [])
 
   // Fetch recent activity
   useEffect(() => {

@@ -1,6 +1,5 @@
 const ChangelogModel = require('./changelogs.model');
 const { AppError } = require('../../middleware/errorHandler.middleware');
-const logger = require('../../config/logger');
 
 class ChangelogService {
   async getAll(type = null) {

@@ -31,7 +31,7 @@ const corsOptions = {
         if (url.hostname === cleanDomain || url.hostname.endsWith('.' + cleanDomain)) {
           return callback(null, true);
         }
-      } catch (e) {
+      } catch {
         // ignore URL parse errors
       }
     }

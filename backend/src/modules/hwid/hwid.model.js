@@ -8,7 +8,7 @@ class HwidModel {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hwid_devices (
         id              VARCHAR(36)   PRIMARY KEY,
-        license_id      VARCHAR(36)   NULL,
+        license_id      VARCHAR(36)   NULL REFERENCES licenses(id) ON DELETE CASCADE,
         roblox_username VARCHAR(100)  NOT NULL DEFAULT '',
         roblox_id       VARCHAR(50)   NOT NULL DEFAULT '',
         roblox_avatar   VARCHAR(255)  NULL,
@@ -18,6 +18,16 @@ class HwidModel {
         updated_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    try {
+      await pool.query(`
+        ALTER TABLE hwid_devices 
+        ADD CONSTRAINT fk_hwid_devices_license_id 
+        FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE CASCADE
+      `);
+    } catch (err) {
+      // Ignore if constraint already exists
+    }
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hwid_deletion_logs (

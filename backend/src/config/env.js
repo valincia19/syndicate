@@ -42,7 +42,9 @@ const env = {
 
   // JWT
   jwtSecret: process.env.JWT_SECRET,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
+  refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
+  refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
 
   // PostgreSQL
   database: {
@@ -135,6 +137,17 @@ const validateEnv = () => {
   // Validate JWT secret length (minimum 32 bytes recommended for HS256)
   if (env.jwtSecret.length < 32) {
     throw new Error('FATAL: JWT_SECRET must be at least 32 characters long for security.');
+  }
+
+  // ── FATAL: REFRESH_TOKEN_SECRET must be distinct and set ────────────────────
+  if (!env.refreshTokenSecret) {
+    throw new Error('FATAL: REFRESH_TOKEN_SECRET is required. Set it in .env file.');
+  }
+  if (env.refreshTokenSecret.length < 32) {
+    throw new Error('FATAL: REFRESH_TOKEN_SECRET must be at least 32 characters long for security.');
+  }
+  if (env.refreshTokenSecret === env.jwtSecret) {
+    throw new Error('FATAL: REFRESH_TOKEN_SECRET must be different from JWT_SECRET.');
   }
 
   // Lazy-require logger to avoid circular deps at module load

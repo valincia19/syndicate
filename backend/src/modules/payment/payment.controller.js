@@ -480,7 +480,7 @@ class PaymentController {
             const discountPercent = voucher.discount_percent || 0;
             priceUSD = priceUSD * (1 - discountPercent / 100);
           }
-        } catch (vErr) {
+        } catch {
           // Abaikan kesalahan voucher, gunakan harga dasar
         }
       }
@@ -495,7 +495,7 @@ class PaymentController {
           if (cachedMap) {
             minMap = typeof cachedMap === 'string' ? JSON.parse(cachedMap) : cachedMap;
           }
-        } catch (cErr) {
+        } catch {
           // Fail open on Redis read error
         }
       }
@@ -523,7 +523,7 @@ class PaymentController {
         if (redis && Object.keys(minMap).length > 0) {
           try {
             await redis.set(mapCacheKey, JSON.stringify(minMap), { ex: 300 }); // Cache 5 min
-          } catch (cErr) {
+          } catch {
             // Ignore Redis write error
           }
         }

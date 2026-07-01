@@ -3,8 +3,7 @@ const crypto = require('crypto');
 const LicenseModel = require('./licenses.model');
 const { AppError } = require('../../middleware/errorHandler.middleware');
 const cacheUtility = require('../../utils/cache.utility');
-
-const VALID_TIERS = ['free', 'premium', 'pro'];
+const logger = require('../../config/logger');
 
 const TIER_CONFIG = {
   free:    { hwid_limit: 1,  durationDays: 7 },
@@ -83,6 +82,13 @@ class LicenseService {
       await cacheUtility.del(`cache:user_licenses:${data.user_id}`);
     }
     await cacheUtility.delPrefix('cache:user_licenses:');
+    
+    logger.info('LicenseService', 'New license key created', { 
+      key: license.license_key, 
+      tier: license.tier, 
+      userId: data.user_id 
+    });
+
     return license;
   }
 
@@ -94,6 +100,12 @@ class LicenseService {
       await cacheUtility.del(`cache:user_licenses:${license.user_id}`);
     }
     await cacheUtility.delPrefix('cache:user_licenses:');
+    
+    logger.info('LicenseService', 'License updated successfully', { 
+      id, 
+      updatedFields: Object.keys(data) 
+    });
+
     return updated;
   }
 
@@ -105,6 +117,11 @@ class LicenseService {
       await cacheUtility.del(`cache:user_licenses:${license.user_id}`);
     }
     await cacheUtility.delPrefix('cache:user_licenses:');
+    
+    logger.info('LicenseService', 'License deleted successfully', { 
+      id, 
+      key: license.license_key 
+    });
   }
 
   async lookupLicense(queryText) {
@@ -158,6 +175,12 @@ class LicenseService {
       );
       const currentClaims = countRes.rows[0]?.count || 0;
       if (currentClaims >= config.max_keys_per_ip) {
+        logger.warn('LicenseService', 'Free key claim limit exceeded for IP/Fingerprint', {
+          ip,
+          fingerprint,
+          currentClaims,
+          maxAllowed: config.max_keys_per_ip,
+        });
         throw new AppError(`Batas maksimal klaim free key per Perangkat/Browser (IP/Fingerprint) telah tercapai (Maksimal: ${config.max_keys_per_ip}x).`, 429);
       }
     }
@@ -186,6 +209,11 @@ class LicenseService {
       expires_at,
       claim_ip: ip,
       claim_fingerprint: fingerprint
+    });
+
+    logger.info('LicenseService', 'Free trial key generated successfully', { 
+      key: license.license_key, 
+      ip 
     });
 
     return license;
@@ -249,6 +277,11 @@ class LicenseService {
     // Clear caches
     await cacheUtility.del(`cache:user_licenses:${userId}`);
     
+    logger.info('LicenseService', 'License key claimed by user', { 
+      key: updatedLicense.license_key, 
+      userId 
+    });
+
     return updatedLicense;
   }
 }

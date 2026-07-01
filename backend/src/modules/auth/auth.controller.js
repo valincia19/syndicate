@@ -21,7 +21,32 @@ function getAuthCookieOptions(env) {
     httpOnly: true,
     secure: isProduction || needsSecure,
     sameSite: sameSiteMode,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 15 * 60 * 1000, // 15 minutes — mirrors JWT_EXPIRES_IN
+    path: '/',
+  };
+
+  if (env.cookieDomain) {
+    options.domain = env.cookieDomain;
+  }
+
+  return options;
+}
+
+/**
+ * Cookie options for the long-lived refresh token.
+ * HttpOnly + Secure + narrow path (/v1/auth/refresh) to reduce attack surface.
+ */
+function getRefreshCookieOptions(env) {
+  const hasProductionDomain = !!(env.cookieDomain && !env.cookieDomain.includes('localhost'));
+  const isProduction = env.nodeEnv === 'production' || hasProductionDomain;
+  const sameSiteMode = env.cookieSameSite || (isProduction ? 'none' : 'lax');
+  const needsSecure = sameSiteMode.toLowerCase() === 'none';
+
+  const options = {
+    httpOnly: true,
+    secure: isProduction || needsSecure,
+    sameSite: sameSiteMode,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days — mirrors REFRESH_TOKEN_EXPIRES_IN
     path: '/',
   };
 
@@ -64,18 +89,19 @@ class AuthController {
     try {
       const userData = req.body;
       const result = await authService.register(userData);
-      const { token, user } = result;
+      const { token, refreshToken, user } = result;
       const env = require('../../config/env');
 
       logger.info('Auth:Register', `User registered successfully: email=${user.email} username=${user.username || 'N/A'} id=${user.id}`);
 
       res.cookie('auth_token', token, getAuthCookieOptions(env));
+      res.cookie('refresh_token', refreshToken, getRefreshCookieOptions(env));
 
       res.status(201).json({
         status: 'success',
         statusCode: 201,
         message: 'User registered successfully',
-        data: result,
+        data: { user, token },
       });
     } catch (error) {
       next(error);
@@ -90,18 +116,19 @@ class AuthController {
     try {
       const credentials = req.body;
       const result = await authService.login(credentials);
-      const { token, user } = result;
+      const { token, refreshToken, user } = result;
       const env = require('../../config/env');
 
       logger.info('Auth:Login', `User logged in successfully: email=${user.email} username=${user.username || 'N/A'} id=${user.id}`);
 
       res.cookie('auth_token', token, getAuthCookieOptions(env));
+      res.cookie('refresh_token', refreshToken, getRefreshCookieOptions(env));
 
       res.status(200).json({
         status: 'success',
         statusCode: 200,
         message: 'Login successful',
-        data: result,
+        data: { user, token },
       });
     } catch (error) {
       next(error);
@@ -116,17 +143,28 @@ class AuthController {
     try {
       const userId = req.user.id; // From auth middleware
       const env = require('../../config/env');
-      const { user, token } = await authService.getProfile(userId);
+      const { user, token, refreshToken } = await authService.getProfile(userId);
 
-      // Re-fresh the httpOnly cookie so the frontend can persist the JWT
-      // for WebSocket sub-protocol authentication
+      let inDiscordGuild = false;
+      if (user.discord_id) {
+        inDiscordGuild = await authService.checkDiscordMembership(user.discord_id);
+      }
+
+      // Rotate both cookies on profile fetch so tokens stay fresh
       res.cookie('auth_token', token, getAuthCookieOptions(env));
+      res.cookie('refresh_token', refreshToken, getRefreshCookieOptions(env));
 
       res.status(200).json({
         status: 'success',
         statusCode: 200,
         message: 'Profile retrieved successfully',
-        data: { user, token },
+        data: {
+          user: {
+            ...user,
+            in_discord_guild: inDiscordGuild
+          },
+          token
+        },
       });
     } catch (error) {
       next(error);
@@ -211,10 +249,11 @@ class AuthController {
 
       await redis.del(stateKey);
       
-      const { token, user } = await authService.discordLogin(code, targetRedirect);
+      const { token, user, refreshToken } = await authService.discordLogin(code, targetRedirect);
       logger.info('Auth:Discord', `Discord OAuth login successful: email=${user?.email || 'N/A'} username=${user?.username || 'N/A'} id=${user?.id || 'N/A'}`);
       
       res.cookie('auth_token', token, getAuthCookieOptions(env));
+      res.cookie('refresh_token', refreshToken, getRefreshCookieOptions(env));
       
       res.redirect(`${targetFrontend}/callback?token=${token}`);
     } catch (error) {
@@ -233,7 +272,11 @@ class AuthController {
       const clearOptions = getAuthCookieOptions(env);
       delete clearOptions.maxAge;
 
+      const clearRefreshOptions = getRefreshCookieOptions(env);
+      delete clearRefreshOptions.maxAge;
+
       res.clearCookie('auth_token', clearOptions);
+      res.clearCookie('refresh_token', clearRefreshOptions);
       
       res.status(200).json({
         status: 'success',
@@ -244,6 +287,59 @@ class AuthController {
       next(error);
     }
   }
+
+  /**
+   * Silent token refresh
+   * POST /v1/auth/refresh
+   *
+   * Reads the `refresh_token` httpOnly cookie, verifies it, fetches the user
+   * from the database, and issues a fresh access token + new refresh token
+   * (token rotation). No request body is required.
+   */
+  async refresh(req, res, next) {
+    try {
+      const env = require('../../config/env');
+      const { AppError } = require('../../middleware/errorHandler.middleware');
+
+      const incomingRefreshToken = req.cookies?.refresh_token;
+      if (!incomingRefreshToken) {
+        throw new AppError('No refresh token provided', 401);
+      }
+
+      // Verify the refresh token (throws AppError 401 if invalid/expired)
+      const userId = authService.verifyRefreshToken(incomingRefreshToken);
+
+      // Fetch the current user to embed up-to-date claims
+      const { user, token, refreshToken } = await authService.getProfile(userId);
+
+      let inDiscordGuild = false;
+      if (user.discord_id) {
+        inDiscordGuild = await authService.checkDiscordMembership(user.discord_id);
+      }
+
+      logger.info('Auth:Refresh', `Token rotated successfully for userId=${userId}`);
+
+      // Rotate both cookies: new short-lived access token + new long-lived refresh token
+      res.cookie('auth_token', token, getAuthCookieOptions(env));
+      res.cookie('refresh_token', refreshToken, getRefreshCookieOptions(env));
+
+      res.status(200).json({
+        status: 'success',
+        statusCode: 200,
+        message: 'Token refreshed successfully',
+        data: {
+          token,
+          user: {
+            ...user,
+            in_discord_guild: inDiscordGuild
+          }
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
 
   /**
    * Send email verification code

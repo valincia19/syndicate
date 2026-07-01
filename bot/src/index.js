@@ -15,6 +15,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
 const { loadCommands } = require('./handlers/commandHandler');
 const { loadEvents } = require('./handlers/eventHandler');
+const { loadInteractions } = require('./handlers/interactionHandler');
 
 // ── Validate required environment variables ────────────────────────────────
 const REQUIRED_ENV = ['DISCORD_BOT_TOKEN', 'DISCORD_CLIENT_ID', 'DISCORD_GUILD_ID'];
@@ -45,6 +46,7 @@ client.commands = new Collection();
   try {
     await loadCommands(client);
     await loadEvents(client);
+    await loadInteractions(client);
 
     // Login to Discord gateway
     await client.login(process.env.DISCORD_BOT_TOKEN);

@@ -4,7 +4,6 @@
  * Stack traces NEVER exposed to client in any environment
  */
 
-const env = require('../config/env');
 const logger = require('../config/logger');
 
 class AppError extends Error {

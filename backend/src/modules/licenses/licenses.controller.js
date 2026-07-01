@@ -1,5 +1,6 @@
 
 const licenseService = require('./licenses.service');
+const logger = require('../../config/logger');
 
 class LicenseController {
   async list(req, res, next) {
@@ -87,6 +88,11 @@ class LicenseController {
   /**
    * Public endpoint — generate a free trial key.
    * Requires a valid server-verified session_id. Rate-limited per IP.
+   *
+   * Security: uses atomic GETDEL to claim-and-burn the Redis session in one
+   * operation, eliminating the race condition where two concurrent requests
+   * with the same session_id could both pass validation before the session
+   * is deleted.
    */
   async freeKey(req, res, next) {
     try {
@@ -100,32 +106,41 @@ class LicenseController {
       }
 
       if (!session_id) {
+        logger.warn('LicenseController', 'Free key claim attempted without session_id');
         throw new AppError('Verification session ID is required', 400);
       }
 
-      const sessionData = await redis.get(`session:${session_id}`);
+      // ── ATOMIC CLAIM-AND-BURN ─────────────────────────────────────────────
+      // GETDEL returns the value and deletes the key in a single atomic op.
+      // If two requests race on the same session_id, only one gets data back;
+      // the other gets null and is rejected immediately.
+      const sessionData = await redis.getdel(`session:${session_id}`);
       if (!sessionData) {
+        logger.warn('LicenseController', 'Invalid, expired, or already-consumed session attempted', { sessionId: session_id });
         throw new AppError('Invalid or expired verification session', 403);
       }
 
-      let session = typeof sessionData === 'string' ? JSON.parse(sessionData) : sessionData;
+      const session = typeof sessionData === 'string' ? JSON.parse(sessionData) : sessionData;
 
       const adminService = require('../admin/admin.service');
       const freeKeySettings = await adminService.getSystemSetting('free_key_settings');
       const turnstileEnabled = freeKeySettings ? (freeKeySettings.turnstile_enabled !== false) : true;
 
       if (turnstileEnabled && !session.captcha) {
+        logger.warn('LicenseController', 'Captcha verification step incomplete', { sessionId: session_id, reason: 'captcha_missing' });
         throw new AppError('Captcha verification step incomplete', 403);
       }
       if (!session.shortlink) {
+        logger.warn('LicenseController', 'Shortlink verification step incomplete', { sessionId: session_id, reason: 'shortlink_missing' });
         throw new AppError('Shortlink verification step incomplete', 403);
       }
 
-      let ip = req.headers['cf-connecting-ip'] || req.headers['x-real-ip'] || req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
+      let ip = req.ip || req.socket?.remoteAddress || 'unknown';
       if (ip && ip.includes(',')) {
         ip = ip.split(',')[0].trim();
       }
       if (session.ip && session.ip !== 'unknown' && session.ip !== ip) {
+        logger.warn('LicenseController', 'IP address mismatch during free key claim', { sessionId: session_id, sessionIp: session.ip, requestIp: ip });
         throw new AppError('IP address mismatch for session', 403);
       }
 
@@ -133,13 +148,19 @@ class LicenseController {
       const crypto = require('crypto');
       const currentFingerprint = crypto.createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
       if (session.fingerprint && session.fingerprint !== currentFingerprint) {
+        logger.warn('LicenseController', 'Fingerprint mismatch during free key claim', { sessionId: session_id });
         throw new AppError('Session fingerprint mismatch (switching browsers/devices is not allowed)', 403);
       }
 
+      // Session was already burned by GETDEL above — no separate redis.del needed.
       const license = await licenseService.createFreeKey(ip, userAgent);
 
-      // BURN SESSION TIMING: Delete session ONLY after DB create succeeds
-      await redis.del(`session:${session_id}`);
+      logger.info('LicenseController', 'Free key claimed successfully', {
+        sessionId: session_id,
+        ip,
+        licenseKey: license.license_key,
+        tier: license.tier,
+      });
 
       // Log activity (fire-and-forget, don't block response)
       try {
@@ -156,6 +177,7 @@ class LicenseController {
         statusCode: 201,
         message: 'Free key generated successfully',
         data: {
+          id: license.id,
           license_key: license.license_key,
           tier: license.tier,
           status: license.status,
