@@ -35,8 +35,8 @@ class HwidController {
         return res.status(403).json({ status: 'error', message: 'This device does not belong to this license' });
       }
 
-      // Enforce weekly limits for premium (3) and pro (6) if user is managing their own license
-      if (license.user_id === req.user.id) {
+      // Enforce weekly limits for premium (3) and pro (6) if user is managing their own license and is not admin/owner
+      if (license.user_id === req.user.id && !['admin', 'owner'].includes(req.user.role)) {
         let limit = 0;
         if (license.tier === 'premium') limit = 3;
         else if (license.tier === 'pro') limit = 6;
